@@ -13,7 +13,12 @@ from ..schemas import (
     SnapshotUpdate,
 )
 from ..services.serializers import snapshot_to_dict
-from ..services.snapshots import complete_snapshot, create_or_resume_draft, get_snapshot_or_404
+from ..services.snapshots import (
+    complete_snapshot,
+    create_or_resume_draft,
+    get_snapshot_or_404,
+    set_snapshot_month,
+)
 
 
 router = APIRouter(prefix="/snapshots", tags=["snapshots"])
@@ -66,7 +71,11 @@ def update_snapshot(
     snapshot_id: int, payload: SnapshotUpdate, session: Session = Depends(get_session)
 ):
     snapshot = get_snapshot_or_404(session, snapshot_id)
-    for field, value in payload.model_dump(exclude_unset=True).items():
+    values = payload.model_dump(exclude_unset=True)
+    snapshot_date = values.pop("snapshot_date", None)
+    if snapshot_date is not None:
+        set_snapshot_month(session, snapshot, snapshot_date)
+    for field, value in values.items():
         setattr(snapshot, field, value)
     session.commit()
     return snapshot_to_dict(session, get_snapshot_or_404(session, snapshot_id))

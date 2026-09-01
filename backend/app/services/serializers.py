@@ -45,12 +45,13 @@ def account_to_dict(account: Account) -> dict:
 def previous_amounts(
     session: Session, snapshot: Snapshot
 ) -> tuple[Snapshot | None, dict[int, int | None]]:
+    current_month_start = snapshot.snapshot_date.replace(day=1)
     previous = session.scalars(
         select(Snapshot)
         .where(
             Snapshot.status == "completed",
             Snapshot.id != snapshot.id,
-            Snapshot.snapshot_date <= snapshot.snapshot_date,
+            Snapshot.snapshot_date < current_month_start,
         )
         .order_by(Snapshot.snapshot_date.desc(), Snapshot.id.desc())
         .limit(1)
