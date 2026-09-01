@@ -2,13 +2,11 @@ import {
   Archive,
   BarChart3,
   Database,
-  House,
   Landmark,
   ShieldCheck,
-  UsersRound,
   WalletCards,
 } from 'lucide-react'
-import { NavLink, Outlet } from 'react-router-dom'
+import { Link, NavLink, Outlet } from 'react-router-dom'
 
 const navItems = [
   { to: '/', label: '概览', icon: BarChart3, end: true },
@@ -22,16 +20,9 @@ export default function Layout() {
   return (
     <div className="app-shell">
       <aside className="sidebar">
-        <div className="brand">
-          <div className="brand-mark" aria-hidden="true">
-            <House className="brand-house" size={27} strokeWidth={2.1} />
-            <UsersRound className="brand-family" size={16} strokeWidth={2.4} />
-          </div>
-          <div>
-            <strong>家底</strong>
-            <span>FamilyLedger</span>
-          </div>
-        </div>
+        <Link className="brand" to="/" aria-label="家底 FamilyLedger，返回概览">
+          <img className="brand-logo" src="/brand/familyledger-logo.svg" alt="" width="250" height="64" />
+        </Link>
         <nav>
           {navItems.map(({ to, label, icon: Icon, end }) => (
             <NavLink key={to} to={to} end={end}>

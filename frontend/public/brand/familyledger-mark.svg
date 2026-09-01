@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-labelledby="title">
+  <title id="title">FamilyLedger 账本之家图标</title>
+  <path d="M7 25 32 7l25 18" fill="none" stroke="#0A63F6" stroke-width="5.5" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M8 27c9-2 17 .2 24 6v23c-7-5.3-15-7.4-24-5.2Z" fill="#EAF2FF" stroke="#0A63F6" stroke-width="3.5" stroke-linejoin="round"/>
+  <path d="M56 27c-9-2-17 .2-24 6v23c7-5.3 15-7.4 24-5.2Z" fill="#FFFFFF" stroke="#0A63F6" stroke-width="3.5" stroke-linejoin="round"/>
+  <path d="M16 37h8M16 43h10M48 37h-8M48 43H38" fill="none" stroke="#0B1739" stroke-width="3" stroke-linecap="round"/>
+  <circle cx="32" cy="19" r="4" fill="#0B1739"/>
+</svg>
