@@ -10,7 +10,7 @@ FamilyLedger 是 Windows 本地运行的家庭资产月度盘点工具。它不�
 - Enter、方向键、Tab 快速录入，550ms 自动保存草稿。
 - 整数分计算总资产、总负债、净资产和投资资产；空值与零严格区分。
 - Dashboard、趋势图、资产构成、成员汇总、历史列表与详情编辑。
-- Markdown、CSV、XLSX 历史导入，保留原始值和差异警告。
+- Markdown、CSV、XLSX/XLSM 历史导入，先预览再确认，并保留原始值和差异警告。
 - JSON 完整备份/恢复，CSV/XLSX 导出，每日 SQLite 自动备份。
 - FastAPI 同源提供 React 构建产物，核心功能不依赖互联网。
 
@@ -35,7 +35,7 @@ npm install
 npm run dev
 ```
 
-生产构建与后端：
+生产构建与后端（直接启动后端时也会检查并刷新过期的前端资源）：
 
 ```powershell
 Set-Location frontend

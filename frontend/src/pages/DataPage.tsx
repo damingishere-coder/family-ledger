@@ -11,7 +11,14 @@ export default function DataPage() {
   const [error, setError] = useState('')
   const [busy, setBusy] = useState(false)
 
-  const load = () => api.get<ImportRecord[]>('/imports').then(setImports).catch(() => undefined)
+  const load = async () => {
+    try {
+      setImports(await api.get<ImportRecord[]>('/imports'))
+      setError('')
+    } catch (reason) {
+      setError(`导入记录加载失败：${errorMessage(reason)}`)
+    }
+  }
   useEffect(() => {
     void load()
   }, [])

@@ -1,9 +1,27 @@
+function detailMessage(detail: unknown): string {
+  if (typeof detail === 'string' && detail.trim()) return detail
+  if (Array.isArray(detail)) {
+    const messages = detail
+      .map((item) => {
+        if (typeof item === 'string') return item
+        if (item && typeof item === 'object' && 'msg' in item && typeof item.msg === 'string') return item.msg
+        return ''
+      })
+      .filter(Boolean)
+    if (messages.length) return messages.join('；')
+  }
+  if (detail && typeof detail === 'object' && 'message' in detail && typeof detail.message === 'string') {
+    return detail.message
+  }
+  return '请求失败'
+}
+
 export class ApiError extends Error {
   status: number
   detail: unknown
 
   constructor(status: number, detail: unknown) {
-    super(typeof detail === 'string' ? detail : '请求失败')
+    super(detailMessage(detail))
     this.status = status
     this.detail = detail
   }
@@ -48,7 +66,10 @@ export const api = {
 }
 
 export function errorMessage(error: unknown): string {
-  if (error instanceof ApiError && typeof error.detail === 'string') return error.detail
+  if (error instanceof ApiError) return detailMessage(error.detail)
+  if (error instanceof TypeError && /fetch|network|failed/i.test(error.message)) {
+    return '无法连接本地服务，请确认 FamilyLedger 仍在运行后重试'
+  }
   if (error instanceof Error) return error.message
   return '发生未知错误'
 }

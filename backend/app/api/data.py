@@ -13,8 +13,9 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from ..database import get_session
+from ..importers.common import ParsedSnapshot, decode_text
 from ..importers.legacy_markdown import parse_legacy_markdown
-from ..importers.tabular import parse_csv, parse_excel
+from ..importers.tabular import parse_csv_with_encoding, parse_excel
 from ..models import ImportRecord, Snapshot, SnapshotEntry
 from ..services.backups import (
     create_named_backup,
@@ -22,7 +23,7 @@ from ..services.backups import (
     payload_as_json,
     restore_payload,
 )
-from ..services.imports import import_record_to_dict, import_snapshots
+from ..services.imports import import_record_to_dict, import_snapshots, preview_snapshots
 
 
 router = APIRouter(tags=["data"])
@@ -45,15 +46,67 @@ async def _read_upload(file: UploadFile) -> bytes:
     return content
 
 
+def _suffix(filename: str) -> str:
+    return filename.lower().rsplit(".", 1)[-1] if "." in filename else ""
+
+
+def _parse_legacy_upload(
+    content: bytes, filename: str
+) -> tuple[list[ParsedSnapshot], str, str]:
+    if _suffix(filename) not in {"md", "markdown", "txt"}:
+        raise ValueError("历史文本仅支持 MD、MARKDOWN 或 TXT 文件")
+    text, encoding = decode_text(content)
+    return parse_legacy_markdown(text), "markdown", encoding
+
+
+def _parse_tabular_upload(
+    content: bytes, filename: str
+) -> tuple[list[ParsedSnapshot], str, str | None]:
+    suffix = _suffix(filename)
+    if suffix == "csv":
+        snapshots, encoding = parse_csv_with_encoding(content)
+        return snapshots, "csv", encoding
+    if suffix in {"xlsx", "xlsm"}:
+        return parse_excel(content), "xlsx", None
+    raise ValueError("仅支持 CSV、XLSX 或 XLSM 表格，不支持旧版 XLS")
+
+
+@router.post("/import/legacy/preview")
+async def preview_legacy(
+    file: UploadFile = File(...), session: Session = Depends(get_session)
+):
+    content = await _read_upload(file)
+    filename = file.filename or "legacy.md"
+    try:
+        snapshots, source_type, encoding = _parse_legacy_upload(content, filename)
+    except ValueError as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
+    return preview_snapshots(session, snapshots, filename, source_type, encoding)
+
+
+@router.post("/import/tabular/preview")
+async def preview_tabular(
+    file: UploadFile = File(...), session: Session = Depends(get_session)
+):
+    content = await _read_upload(file)
+    filename = file.filename or "import.csv"
+    try:
+        snapshots, source_type, encoding = _parse_tabular_upload(content, filename)
+    except ValueError as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
+    return preview_snapshots(session, snapshots, filename, source_type, encoding)
+
+
 @router.post("/import/legacy")
 async def import_legacy(
     file: UploadFile = File(...), session: Session = Depends(get_session)
 ):
     content = await _read_upload(file)
+    filename = file.filename or "legacy.md"
     try:
-        snapshots = parse_legacy_markdown(content.decode("utf-8-sig"))
-        record = import_snapshots(session, snapshots, file.filename or "legacy.md", "markdown")
-    except (UnicodeDecodeError, ValueError) as exc:
+        snapshots, source_type, _encoding = _parse_legacy_upload(content, filename)
+        record = import_snapshots(session, snapshots, filename, source_type)
+    except ValueError as exc:
         raise HTTPException(status_code=422, detail=str(exc)) from exc
     return import_record_to_dict(record)
 
@@ -64,16 +117,8 @@ async def import_tabular(
 ):
     content = await _read_upload(file)
     filename = file.filename or "import.csv"
-    suffix = filename.lower().rsplit(".", 1)[-1]
     try:
-        if suffix == "csv":
-            snapshots = parse_csv(content)
-            source_type = "csv"
-        elif suffix in {"xlsx", "xlsm"}:
-            snapshots = parse_excel(content)
-            source_type = "xlsx"
-        else:
-            raise ValueError("仅支持 CSV、XLSX 或 XLSM 表格")
+        snapshots, source_type, _encoding = _parse_tabular_upload(content, filename)
         record = import_snapshots(session, snapshots, filename, source_type)
     except ValueError as exc:
         raise HTTPException(status_code=422, detail=str(exc)) from exc

@@ -5,6 +5,9 @@ from datetime import date
 from decimal import Decimal, InvalidOperation, ROUND_HALF_UP
 
 
+TEXT_ENCODINGS = ("utf-8-sig", "gb18030")
+
+
 @dataclass
 class ParsedEntry:
     member_name: str
@@ -25,6 +28,15 @@ class ParsedSnapshot:
     entries: list[ParsedEntry] = field(default_factory=list)
     legacy_summary: dict[str, int | None] = field(default_factory=dict)
     warnings: list[str] = field(default_factory=list)
+
+
+def decode_text(content: bytes) -> tuple[str, str]:
+    for encoding in TEXT_ENCODINGS:
+        try:
+            return content.decode(encoding), encoding
+        except UnicodeDecodeError:
+            continue
+    raise ValueError("文本文件编码无法识别，请保存为 UTF-8 或 GB18030 后重试")
 
 
 def parse_money_to_cents(raw: object) -> tuple[int | None, list[str]]:

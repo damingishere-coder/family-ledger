@@ -165,4 +165,6 @@ def parse_legacy_markdown(content: str) -> list[ParsedSnapshot]:
     for snapshot in snapshots:
         if not snapshot.entries:
             snapshot.warnings.append("该日期未解析出账户明细")
+    if not any(snapshot.entries for snapshot in snapshots):
+        raise ValueError("Markdown 中没有可导入的账户明细")
     return snapshots

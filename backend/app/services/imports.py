@@ -159,6 +159,64 @@ def import_snapshots(
     return record
 
 
+def preview_snapshots(
+    session: Session,
+    parsed_snapshots: list[ParsedSnapshot],
+    source_filename: str,
+    source_type: str,
+    detected_encoding: str | None = None,
+) -> dict:
+    duplicate_dates = set(
+        session.scalars(
+            select(Snapshot.snapshot_date).where(Snapshot.legacy_source == source_filename)
+        ).all()
+    )
+    snapshot_items = []
+    warnings: list[str] = []
+    total_rows = 0
+    importable_rows = 0
+    duplicate_snapshots = 0
+
+    for parsed in parsed_snapshots:
+        row_count = len(parsed.entries)
+        total_rows += row_count
+        will_skip = parsed.snapshot_date in duplicate_dates
+        item_warnings = list(parsed.warnings)
+        for entry in parsed.entries:
+            item_warnings.extend(
+                f"{entry.account_name}：{warning}" for warning in entry.warnings
+            )
+        if will_skip:
+            duplicate_snapshots += 1
+            item_warnings.append("已从同名来源导入，该日期将在确认时跳过")
+        else:
+            importable_rows += row_count
+        warnings.extend(
+            f"{parsed.snapshot_date.isoformat()}：{warning}" for warning in item_warnings
+        )
+        snapshot_items.append(
+            {
+                "snapshot_date": parsed.snapshot_date.isoformat(),
+                "row_count": row_count,
+                "will_skip": will_skip,
+                "warnings": item_warnings,
+            }
+        )
+
+    return {
+        "source_filename": source_filename,
+        "source_type": source_type,
+        "detected_encoding": detected_encoding,
+        "total_snapshots": len(parsed_snapshots),
+        "total_rows": total_rows,
+        "importable_rows": importable_rows,
+        "duplicate_snapshots": duplicate_snapshots,
+        "warning_rows": len(warnings),
+        "warnings": warnings,
+        "snapshots": snapshot_items,
+    }
+
+
 def import_record_to_dict(record: ImportRecord) -> dict:
     return {
         "id": record.id,

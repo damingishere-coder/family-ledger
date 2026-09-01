@@ -1,13 +1,22 @@
 from __future__ import annotations
 
-import csv
-import io
 from collections import defaultdict
+import csv
 from datetime import date, datetime
+import io
+from xml.etree.ElementTree import ParseError
+from zipfile import BadZipFile
 
 from openpyxl import load_workbook
+from openpyxl.utils.exceptions import InvalidFileException
 
-from .common import ParsedEntry, ParsedSnapshot, infer_account_type, parse_money_to_cents
+from .common import (
+    ParsedEntry,
+    ParsedSnapshot,
+    decode_text,
+    infer_account_type,
+    parse_money_to_cents,
+)
 
 
 ALIASES = {
@@ -113,26 +122,46 @@ def rows_to_snapshots(rows: list[list[object]]) -> list[ParsedSnapshot]:
             fallback_date = next(iter(grouped), date.today())
             parsed = grouped.setdefault(fallback_date, ParsedSnapshot(fallback_date))
             parsed.warnings.append(f"第 {row_number} 行未导入：{exc}")
-    if not grouped:
-        raise ValueError("表格中没有可导入的数据行")
+    if not grouped or not any(snapshot.entries for snapshot in grouped.values()):
+        raise ValueError("表格中没有可导入的有效数据行")
     return [grouped[key] for key in sorted(grouped)]
 
 
 def parse_csv(content: bytes) -> list[ParsedSnapshot]:
-    text = content.decode("utf-8-sig")
+    snapshots, _encoding = parse_csv_with_encoding(content)
+    return snapshots
+
+
+def parse_csv_with_encoding(content: bytes) -> tuple[list[ParsedSnapshot], str]:
+    text, encoding = decode_text(content)
     rows = [list(row) for row in csv.reader(io.StringIO(text))]
-    return rows_to_snapshots(rows)
+    return rows_to_snapshots(rows), encoding
 
 
 def parse_excel(content: bytes) -> list[ParsedSnapshot]:
-    workbook = load_workbook(io.BytesIO(content), data_only=True, read_only=True)
+    workbook = None
     all_rows: list[list[object]] = []
-    for sheet in workbook.worksheets:
-        rows = [list(row) for row in sheet.iter_rows(values_only=True)]
-        if not rows:
-            continue
-        if not all_rows:
-            all_rows.extend(rows)
-        else:
-            all_rows.extend(rows[1:])
+    try:
+        workbook = load_workbook(io.BytesIO(content), data_only=True, read_only=True)
+        for sheet in workbook.worksheets:
+            rows = [list(row) for row in sheet.iter_rows(values_only=True)]
+            if not rows:
+                continue
+            if not all_rows:
+                all_rows.extend(rows)
+            else:
+                all_rows.extend(rows[1:])
+    except (
+        BadZipFile,
+        InvalidFileException,
+        KeyError,
+        OSError,
+        EOFError,
+        ParseError,
+        ValueError,
+    ) as exc:
+        raise ValueError("Excel 文件损坏或不是有效的 XLSX/XLSM 工作簿") from exc
+    finally:
+        if workbook is not None:
+            workbook.close()
     return rows_to_snapshots(all_rows)

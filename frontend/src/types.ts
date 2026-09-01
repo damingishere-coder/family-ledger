@@ -106,3 +106,23 @@ export interface ImportRecord {
     errors?: string[]
   }
 }
+
+export interface ImportPreviewSnapshot {
+  snapshot_date: string
+  row_count: number
+  will_skip: boolean
+  warnings: string[]
+}
+
+export interface ImportPreview {
+  source_filename: string
+  source_type: 'markdown' | 'csv' | 'xlsx'
+  detected_encoding: string | null
+  total_snapshots: number
+  total_rows: number
+  importable_rows: number
+  duplicate_snapshots: number
+  warning_rows: number
+  warnings: string[]
+  snapshots: ImportPreviewSnapshot[]
+}

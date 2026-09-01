@@ -238,6 +238,7 @@ td small { display: block; margin-top: 3px; color: var(--muted); font-size: 9px;
 .form-grid label { display: grid; gap: 5px; color: #52627b; font-size: 10px; font-weight: 650; }
 .form-grid .wide { grid-column: 1 / -1; }
 .modal-actions { display: flex; justify-content: flex-end; gap: 7px; padding: 12px 20px 18px; }
+.spin { animation: spin .7s linear infinite; }
 
 .data-actions-panel { overflow: hidden; }
 .data-actions-panel.compact .panel-header { padding-bottom: 9px; }
@@ -248,6 +249,27 @@ td small { display: block; margin-top: 3px; color: var(--muted); font-size: 9px;
 .data-action strong, .data-action small { display: block; }
 .data-action strong { font-size: 10px; }
 .data-action small { margin-top: 2px; color: var(--muted); font-size: 8px; font-weight: 400; }
+.import-preview-modal { width: min(590px, 100%); }
+.import-preview-body { display: grid; gap: 14px; min-height: 120px; padding: 18px 20px; }
+.import-progress { display: flex; align-items: center; justify-content: center; gap: 9px; min-height: 88px; color: #52627b; font-size: 12px; }
+.import-dialog-notice { margin: 0; }
+.import-preview-summary { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
+.import-preview-summary div { display: grid; gap: 4px; padding: 11px; background: #f6f9fd; border: 1px solid var(--line-soft); border-radius: 8px; }
+.import-preview-summary span { color: var(--muted); font-size: 9px; }
+.import-preview-summary strong { color: #223754; font-size: 13px; }
+.import-encoding { margin: -5px 0 0; color: var(--muted); font-size: 9px; }
+.import-preview-list { overflow: hidden; border: 1px solid var(--line); border-radius: 8px; }
+.import-preview-list div { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 9px 11px; border-top: 1px solid var(--line-soft); }
+.import-preview-list div:first-child { border-top: 0; }
+.import-preview-list strong { font-size: 10px; }
+.import-preview-list span { color: var(--muted); text-align: right; font-size: 9px; }
+.import-preview-list .will-skip { background: #fff9ed; }
+.import-preview-warnings { padding: 10px 12px; color: #76521a; background: #fffaf0; border: 1px solid #eedbb3; border-radius: 8px; font-size: 9px; }
+.import-preview-warnings summary { cursor: pointer; font-weight: 700; }
+.import-preview-warnings ul { max-height: 150px; overflow: auto; margin: 8px 0 0; padding-left: 18px; line-height: 1.6; }
+.import-complete { display: grid; justify-items: center; padding: 15px 0; color: var(--success); text-align: center; }
+.import-complete h3 { margin: 9px 0 0; color: #203550; font-size: 15px; }
+.import-complete p { margin: 6px 0 0; color: var(--muted); font-size: 10px; }
 .data-management-grid { display: grid; grid-template-columns: minmax(0, 1.2fr) minmax(300px, .8fr); align-items: start; gap: 12px; margin-bottom: 12px; }
 .data-safety-column { display: grid; gap: 12px; }
 .safety-card { display: flex; align-items: flex-start; gap: 11px; padding: 16px; }
