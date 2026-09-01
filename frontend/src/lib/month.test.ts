@@ -17,7 +17,7 @@ describe('month helpers', () => {
   it('formats stored dates as months', () => {
     expect(snapshotMonth('2026-08-31')).toBe('2026-08')
     expect(formatSnapshotMonth('2026-08-31')).toBe('2026年08月')
-    expect(formatSnapshotMonthShort('2026-08-31')).toBe('2026/08')
+    expect(formatSnapshotMonthShort('2026-08-31')).toBe('2026年08月')
   })
 
   it('uses local calendar time instead of UTC for the default month', () => {

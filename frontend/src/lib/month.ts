@@ -27,6 +27,5 @@ export function formatSnapshotMonth(snapshotDate: string): string {
 }
 
 export function formatSnapshotMonthShort(snapshotDate: string): string {
-  const month = snapshotMonth(snapshotDate)
-  return MONTH_PATTERN.test(month) ? month.replace('-', '/') : snapshotDate
+  return formatSnapshotMonth(snapshotDate)
 }
