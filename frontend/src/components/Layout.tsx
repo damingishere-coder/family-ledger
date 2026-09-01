@@ -2,8 +2,10 @@ import {
   Archive,
   BarChart3,
   Database,
+  House,
   Landmark,
-  PanelLeftClose,
+  ShieldCheck,
+  UsersRound,
   WalletCards,
 } from 'lucide-react'
 import { NavLink, Outlet } from 'react-router-dom'
@@ -21,9 +23,12 @@ export default function Layout() {
     <div className="app-shell">
       <aside className="sidebar">
         <div className="brand">
-          <div className="brand-mark">家</div>
+          <div className="brand-mark" aria-hidden="true">
+            <House className="brand-house" size={27} strokeWidth={2.1} />
+            <UsersRound className="brand-family" size={16} strokeWidth={2.4} />
+          </div>
           <div>
-            <strong>家庭统计台</strong>
+            <strong>家底</strong>
             <span>FamilyLedger</span>
           </div>
         </div>
@@ -36,8 +41,12 @@ export default function Layout() {
           ))}
         </nav>
         <div className="sidebar-note">
-          <PanelLeftClose size={16} />
-          <span>本地保存 · 断网可用</span>
+          <span className="sidebar-status-dot" />
+          <ShieldCheck size={16} />
+          <div>
+            <strong>本地数据存储</strong>
+            <span>仅保存在本地设备</span>
+          </div>
         </div>
       </aside>
       <main className="main-content">

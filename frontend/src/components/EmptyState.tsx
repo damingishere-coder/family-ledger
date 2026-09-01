@@ -1,4 +1,5 @@
 import type { ReactNode } from 'react'
+import { House } from 'lucide-react'
 
 export default function EmptyState({
   title,
@@ -11,7 +12,7 @@ export default function EmptyState({
 }) {
   return (
     <div className="empty-state">
-      <div className="empty-mark">FL</div>
+      <div className="empty-mark"><House size={24} strokeWidth={2} /></div>
       <h2>{title}</h2>
       <p>{description}</p>
       {action}
