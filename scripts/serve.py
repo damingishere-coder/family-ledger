@@ -27,6 +27,9 @@ def _frontend_inputs() -> list[Path]:
     source_dir = FRONTEND_DIR / "src"
     if source_dir.exists():
         inputs.extend(path for path in source_dir.rglob("*") if path.is_file())
+    public_dir = FRONTEND_DIR / "public"
+    if public_dir.exists():
+        inputs.extend(path for path in public_dir.rglob("*") if path.is_file())
     return [path for path in inputs if path.exists()]
 
 

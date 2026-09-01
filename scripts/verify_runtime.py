@@ -27,6 +27,12 @@ def fetch(url: str) -> tuple[int, bytes]:
         return response.status, response.read()
 
 
+def fetch_asset(url: str) -> tuple[int, bytes, str]:
+    request = urllib.request.Request(url, headers={"User-Agent": "FamilyLedger-Runtime-Check"})
+    with urllib.request.urlopen(request, timeout=2) as response:
+        return response.status, response.read(), response.headers.get_content_type()
+
+
 def preview_markdown(url: str) -> tuple[int, bytes]:
     boundary = "----family-ledger-runtime-check"
     content = (
@@ -97,6 +103,12 @@ def main() -> int:
                         f"http://127.0.0.1:{port}/api/health"
                     )
                     root_status, root_body = fetch(f"http://127.0.0.1:{port}/")
+                    logo_status, logo_body, logo_type = fetch_asset(
+                        f"http://127.0.0.1:{port}/brand/familyledger-logo.svg"
+                    )
+                    favicon_status, favicon_body, favicon_type = fetch_asset(
+                        f"http://127.0.0.1:{port}/brand/favicon-32x32.png"
+                    )
                     preview_status, preview_body = preview_markdown(
                         f"http://127.0.0.1:{port}/api/import/legacy/preview"
                     )
@@ -112,6 +124,22 @@ def main() -> int:
                         raise RuntimeError(f"数据库完整性异常：{health}")
                     if root_status != 200 or b'id="root"' not in root_body:
                         raise RuntimeError("SPA 首页未由 FastAPI 提供")
+                    if (
+                        logo_status != 200
+                        or logo_type != "image/svg+xml"
+                        or not logo_body.lstrip().startswith(b"<svg")
+                    ):
+                        raise RuntimeError(
+                            f"品牌 Logo 响应异常：status={logo_status}, type={logo_type}"
+                        )
+                    if (
+                        favicon_status != 200
+                        or favicon_type != "image/png"
+                        or not favicon_body.startswith(b"\x89PNG\r\n\x1a\n")
+                    ):
+                        raise RuntimeError(
+                            f"PNG favicon 响应异常：status={favicon_status}, type={favicon_type}"
+                        )
                     if preview_status != 200 or preview.get("total_rows") != 1:
                         raise RuntimeError(f"导入预览响应异常：{preview}")
                     if imports_status != 200 or imports != []:
@@ -124,6 +152,7 @@ def main() -> int:
                                 "service": health["service"],
                                 "database_integrity": health["database_integrity"],
                                 "spa": "ok",
+                                "brand_static": "ok",
                                 "import_preview": "ok",
                                 "preview_persisted_records": len(imports),
                             },

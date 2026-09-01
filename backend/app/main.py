@@ -71,6 +71,10 @@ def create_app(
     if assets_dir.exists():
         app.mount("/assets", StaticFiles(directory=assets_dir), name="assets")
 
+    brand_dir = frontend_dist / "brand"
+    if brand_dir.exists():
+        app.mount("/brand", StaticFiles(directory=brand_dir), name="brand")
+
     @app.get("/{full_path:path}", include_in_schema=False)
     def spa(full_path: str):
         if full_path.startswith("api/"):

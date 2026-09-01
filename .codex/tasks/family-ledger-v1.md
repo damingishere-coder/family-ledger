@@ -136,3 +136,11 @@ Set-Location ..
 - 候选阶段检查全部 SVG 可解析、viewBox 正确、无外链、无嵌入脚本且对比预览可打开。
 - 接入阶段运行前端测试、类型检查和生产构建，并在 1280、1440、1920 宽度验证侧栏与 favicon。
 - 最终复查静态资源路径、构建输出、依赖变化、范围外修改与临时文件；普通 Push 更新 PR #1，等待 CI，不自动合并。
+
+### 真实生产复检修正
+
+- 用户在 `127.0.0.1:8767` 发现侧栏 Logo 破图；实测 `/brand/*` 被 SPA fallback 错误返回为 `index.html`，此前只在 Vite 开发服务器验证属于验收遗漏。
+- FastAPI 必须在 SPA fallback 前单独挂载构建后的 `/brand` 目录，并用测试锁定 SVG/PNG MIME、缺失资源 404 与 SPA 路由兼容性。
+- `scripts/serve.py` 必须把 `frontend/public` 纳入构建新鲜度判断，`scripts/verify_runtime.py` 必须验证真实品牌资源而不只验证首页。
+- 针对约 2500 CSS px 的 4K/高 DPI 视口增加大屏断点：扩展页面宽度、侧栏、字号、控件、表格和图表，不使用 `zoom` 或 `transform: scale`。
+- 完成后必须在真实 `8767` 复核品牌资源、页面宽度、Logo 显示与关键交互，并重新 Push、等待 CI；不得自动合并。

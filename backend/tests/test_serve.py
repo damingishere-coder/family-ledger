@@ -52,6 +52,28 @@ def test_frontend_build_runs_when_source_is_newer(monkeypatch, tmp_path):
     assert calls == [(["npm.cmd", "run", "build"], index.parents[1], True)]
 
 
+def test_frontend_build_runs_when_public_asset_is_newer(monkeypatch, tmp_path):
+    source, index = configure_frontend(monkeypatch, tmp_path)
+    public_asset = index.parents[1] / "public" / "brand" / "favicon.svg"
+    public_asset.parent.mkdir(parents=True)
+    public_asset.write_text("<svg />", encoding="utf-8")
+    (index.parents[1] / "node_modules").mkdir()
+    os.utime(source, ns=(1_000_000_000, 1_000_000_000))
+    os.utime(index, ns=(2_000_000_000, 2_000_000_000))
+    os.utime(public_asset, ns=(3_000_000_000, 3_000_000_000))
+    calls = []
+    monkeypatch.setattr(serve.shutil, "which", lambda _name: "npm.cmd")
+
+    def fake_run(command, cwd, check):
+        calls.append((command, cwd, check))
+
+    monkeypatch.setattr(serve.subprocess, "run", fake_run)
+
+    serve.ensure_frontend_build()
+
+    assert calls == [(["npm.cmd", "run", "build"], index.parents[1], True)]
+
+
 def test_stale_frontend_without_dependencies_fails_clearly(monkeypatch, tmp_path):
     source, index = configure_frontend(monkeypatch, tmp_path)
     os.utime(index, ns=(1_000_000_000, 1_000_000_000))

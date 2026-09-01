@@ -320,3 +320,116 @@ td small { display: block; margin-top: 3px; color: var(--muted); font-size: 9px;
   .entry-row { grid-template-columns: minmax(102px, 1.25fr) minmax(70px, .7fr) minmax(95px, .8fr) minmax(65px, .6fr); padding-inline: 8px; }
   .money-input { font-size: 8px; }
 }
+
+@media (min-width: 1920px) {
+  .app-shell { grid-template-columns: 208px minmax(0, 1fr); }
+  .sidebar { width: 208px; padding: 24px 16px 20px; }
+  .brand { padding: 0 6px 22px; }
+  .sidebar nav { gap: 7px; margin-top: 18px; }
+  .sidebar nav a { gap: 12px; min-height: 46px; padding: 0 14px; font-size: 15px; }
+  .sidebar nav a svg { width: 21px; height: 21px; }
+  .sidebar-note { gap: 0 10px; padding: 14px 12px 13px 16px; }
+  .sidebar-note > svg { width: 19px; height: 19px; }
+  .sidebar-note strong { font-size: 12px; }
+  .sidebar-note span { font-size: 11px; }
+
+  .page { max-width: min(2200px, calc(100vw - 208px)); padding: 32px 40px 80px; }
+  .page-header { margin-bottom: 22px; }
+  .page-header h1 { margin-bottom: 6px; font-size: 30px; }
+  .page-header p { font-size: 14px; }
+  .button { min-height: 42px; padding: 0 17px; font-size: 14px; }
+  .button.small { min-height: 35px; padding: 0 12px; font-size: 12px; }
+  .button-row { gap: 10px; }
+
+  .panel { border-radius: 12px; }
+  .panel-header { gap: 20px; padding: 20px 22px 14px; }
+  .panel-header h2 { margin-bottom: 4px; font-size: 17px; }
+  .panel-header p { font-size: 12px; }
+  .kpi-grid { gap: 14px; margin-bottom: 16px; }
+  .kpi-card { min-height: 128px; padding: 18px 20px; border-radius: 11px; }
+  .kpi-label { font-size: 13px; }
+  .kpi-card strong { margin: 15px 0 9px; font-size: clamp(26px, 1.6vw, 32px); }
+  .kpi-card > span { font-size: 12px; }
+  .dashboard-grid { gap: 16px; margin-bottom: 16px; }
+  .chart-wrap { height: 330px; padding: 8px 18px 18px 6px; }
+  .chart-wrap text { font-size: 12px; }
+  .segmented button { min-height: 33px; padding: 0 12px; font-size: 12px; }
+  .composition-content { grid-template-columns: 185px minmax(0, 1fr); min-height: 330px; padding: 0 20px 18px; }
+  .donut-wrap { width: 180px; height: 215px; }
+  .donut-center strong { font-size: 26px; }
+  .donut-center span { font-size: 11px; }
+  .composition-legend { gap: 13px; }
+  .composition-legend > div { grid-template-columns: 9px minmax(0, 1fr) auto; gap: 9px; font-size: 12px; }
+  .legend-dot { width: 9px; height: 9px; }
+  .text-link, .table-action { font-size: 12px; }
+
+  select, input { min-height: 40px; padding-inline: 11px; }
+  table { font-size: 13px; }
+  th { padding: 11px 15px; font-size: 11px; }
+  td { padding: 13px 15px; }
+  td small { font-size: 11px; }
+  .icon-button { width: 35px; height: 35px; }
+  .type-tag, .archive-tag, .status-badge, .include-badge, .exclude-badge { padding: 4px 9px; font-size: 11px; }
+  .notice { padding: 12px 15px; font-size: 13px; }
+  .back-link { margin-bottom: 11px; font-size: 12px; }
+  .summary-strip { margin-bottom: 16px; }
+  .summary-strip > div { padding: 18px 22px; }
+  .summary-strip span { font-size: 12px; }
+  .summary-strip strong { margin-top: 7px; font-size: 24px; }
+
+  .snapshot-header { margin: 0 -40px 18px; padding: 22px 40px 14px; }
+  .snapshot-header-main { gap: 32px; }
+  .snapshot-actions { gap: 9px; }
+  .snapshot-actions label { gap: 4px; font-size: 11px; }
+  .snapshot-actions input { min-width: 160px; }
+  .snapshot-progress { grid-template-columns: minmax(220px, 1fr) auto auto; gap: 13px; margin-top: 14px; }
+  .progress-track { height: 8px; }
+  .progress-text, .save-state { font-size: 11px; }
+  .snapshot-member { margin-bottom: 16px; }
+  .member-section-header { gap: 12px; padding: 14px 18px; }
+  .member-section-header h2 { font-size: 16px; }
+  .member-section-header p { font-size: 11px; }
+  .member-avatar { width: 38px; height: 38px; border-radius: 9px; font-size: 13px; }
+  .entry-column-title { padding: 11px 15px; }
+  .entry-column-title h3 { font-size: 13px; }
+  .entry-column-title span { font-size: 10px; }
+  .entry-row { grid-template-columns: minmax(150px, 1.35fr) minmax(100px, .7fr) minmax(140px, .85fr) minmax(90px, .62fr); min-height: 60px; padding: 7px 14px; font-size: 12px; }
+  .entry-head { min-height: 36px; font-size: 10px; }
+  .account-cell strong { font-size: 13px; }
+  .account-cell small { margin-top: 3px; font-size: 10px; }
+  .input-cell { max-width: 150px; }
+  .input-cell > span { left: 9px; font-size: 11px; }
+  .money-input { min-height: 36px; padding: 0 8px 0 22px; font-size: 12px; }
+  .money-input.compact { width: 150px; }
+  .field-error { top: 38px; font-size: 10px; }
+  .compact-empty { min-height: 96px; }
+  .snapshot-summary { bottom: 14px; margin-top: 18px; border-radius: 11px; }
+  .snapshot-summary > div { padding: 14px 20px; }
+  .snapshot-summary span { font-size: 11px; }
+  .snapshot-summary strong { margin-top: 5px; font-size: 21px; }
+  .summary-confirm { gap: 7px; font-size: 11px; }
+
+  .member-create { padding: 16px 18px; margin-bottom: 13px; }
+  .member-create h2, .member-heading h2 { font-size: 15px; }
+  .member-create p, .member-heading p { font-size: 11px; }
+  .account-toolbar { grid-template-columns: 165px 215px 175px minmax(280px, 1fr) auto; gap: 9px; margin-bottom: 13px; }
+  .account-toolbar select, .account-toolbar input { font-size: 12px; }
+  .result-count { font-size: 11px; }
+  .accounts-layout { grid-template-columns: minmax(0, 1fr) 310px; gap: 14px; }
+  .accounts-section { margin-bottom: 13px; }
+  .table-text-actions button { font-size: 11px; }
+  .data-action { grid-template-columns: 38px minmax(0, 1fr); min-height: 60px; gap: 10px; padding: 8px 9px; }
+  .data-action-icon { width: 36px; height: 36px; }
+  .data-action strong { font-size: 12px; }
+  .data-action small { font-size: 10px; }
+  .local-path-card strong { font-size: 12px; }
+  .local-path-card p { font-size: 10px; }
+
+  .year-tabs button, .view-switch button { min-height: 36px; padding: 0 14px; font-size: 12px; }
+  .history-overview-grid { grid-template-columns: minmax(0, 1fr) 320px; gap: 16px; margin-bottom: 16px; }
+  .comparison-list dt { font-size: 12px; }
+  .comparison-list dd { font-size: 15px; }
+  .modal { width: min(760px, 100%); }
+  .modal-header h2 { font-size: 20px; }
+  .modal-header p, .form-grid label { font-size: 12px; }
+}
