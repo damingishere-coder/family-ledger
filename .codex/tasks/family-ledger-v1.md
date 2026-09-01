@@ -144,3 +144,4 @@ Set-Location ..
 - `scripts/serve.py` 必须把 `frontend/public` 纳入构建新鲜度判断，`scripts/verify_runtime.py` 必须验证真实品牌资源而不只验证首页。
 - 针对约 2500 CSS px 的 4K/高 DPI 视口增加大屏断点：扩展页面宽度、侧栏、字号、控件、表格和图表，不使用 `zoom` 或 `transform: scale`。
 - 完成后必须在真实 `8767` 复核品牌资源、页面宽度、Logo 显示与关键交互，并重新 Push、等待 CI；不得自动合并。
+- 用户继续反馈页面文字难以看清；统一取消 8–11px 的过度压缩，正文、输入和表格至少 13px，辅助文字至少 12px，大屏再提高一级并加深次要文字对比度。
