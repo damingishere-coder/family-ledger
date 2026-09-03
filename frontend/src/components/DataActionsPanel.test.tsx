@@ -14,9 +14,31 @@ const PREVIEW: ImportPreview = {
   total_rows: 4,
   importable_rows: 4,
   duplicate_snapshots: 0,
+  blocked_snapshots: 0,
+  ignored_snapshots: 0,
   warning_rows: 0,
   warnings: [],
-  snapshots: [{ snapshot_date: '2025-12-25', row_count: 4, will_skip: false, warnings: [] }],
+  snapshots: [{
+    snapshot_date: '2025-12-31',
+    source_date: '2025-12-25',
+    row_count: 4,
+    will_skip: false,
+    layout: 'markdown-horizontal',
+    source_sheet: null,
+    status: 'importable',
+    blocking_errors: [],
+    source_summary: {},
+    calculated_summary: {
+      total_assets_cents: 0,
+      total_liabilities_cents: 0,
+      net_worth_cents: 0,
+      investment_assets_cents: 0,
+      completed_entries: 0,
+      total_entries: 4,
+    },
+    differences: [],
+    warnings: [],
+  }],
 }
 
 const IMPORT_RESULT: ImportRecord = {
@@ -73,7 +95,9 @@ describe('DataActionsPanel import flow', () => {
 
     resolvePreview?.(jsonResponse(PREVIEW))
     expect(await screen.findByRole('button', { name: '确认导入' })).toBeTruthy()
-    expect(screen.getAllByText('4 行')).toHaveLength(2)
+    expect(screen.getByText('4 行')).toBeTruthy()
+    expect(screen.getByText(/4 行 · 可导入/)).toBeTruthy()
+    expect(screen.getByText(/计算汇总：资产/)).toBeTruthy()
     expect(fetchMock).toHaveBeenCalledTimes(1)
 
     await userEvent.click(screen.getByRole('button', { name: '确认导入' }))

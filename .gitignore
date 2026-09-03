@@ -14,8 +14,7 @@ frontend/coverage/
 # Local runtime data
 data/*.db
 data/*.db-*
-backups/*.db
-backups/*.json
+backups/
 logs/
 *.log
 

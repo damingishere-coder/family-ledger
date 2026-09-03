@@ -5,7 +5,7 @@ export const ACCOUNT_TYPE_LABELS: Record<AccountType, string> = {
   debit_card: '储蓄卡',
   credit_card: '信用卡',
   investment: '投资账户',
-  receivable: '应收款',
+  receivable: '待收欠款',
   other_asset: '其他资产',
   other_liability: '其他负债',
 }

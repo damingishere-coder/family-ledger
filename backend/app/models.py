@@ -3,7 +3,7 @@ from __future__ import annotations
 from datetime import date, datetime, timezone
 from typing import Optional
 
-from sqlalchemy import Boolean, Date, DateTime, ForeignKey, Integer, String, Text
+from sqlalchemy import Boolean, Date, DateTime, ForeignKey, Index, Integer, String, Text, func
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from .database import Base
@@ -70,6 +70,14 @@ class Snapshot(TimestampMixin, Base):
         cascade="all, delete-orphan",
         order_by="SnapshotEntry.id",
     )
+
+
+Index(
+    "uq_snapshots_completed_natural_month",
+    func.strftime("%Y-%m", Snapshot.snapshot_date),
+    unique=True,
+    sqlite_where=Snapshot.status == "completed",
+)
 
 
 class SnapshotEntry(TimestampMixin, Base):

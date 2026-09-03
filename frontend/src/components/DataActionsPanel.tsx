@@ -11,6 +11,7 @@ import {
 } from 'lucide-react'
 import { useRef, useState } from 'react'
 import { api, errorMessage } from '../lib/api'
+import { formatMoney } from '../lib/money'
 import type { ImportPreview, ImportRecord } from '../types'
 
 type ImportKind = 'legacy' | 'tabular'
@@ -37,6 +38,27 @@ const MAX_UPLOAD_BYTES = 20 * 1024 * 1024
 const IMPORT_PATHS: Record<ImportKind, { preview: string; confirm: string }> = {
   legacy: { preview: '/import/legacy/preview', confirm: '/import/legacy' },
   tabular: { preview: '/import/tabular/preview', confirm: '/import/tabular' },
+}
+
+const PREVIEW_STATUS_LABELS: Record<ImportPreview['snapshots'][number]['status'], string> = {
+  importable: '可导入',
+  duplicate: '自然月重复，跳过',
+  blocked: '已阻止',
+  ignored: '已忽略',
+}
+
+function formatSummary(label: string, summary: {
+  total_assets_cents?: number | null
+  total_liabilities_cents?: number | null
+  net_worth_cents?: number | null
+}): string | null {
+  const values = [
+    summary.total_assets_cents,
+    summary.total_liabilities_cents,
+    summary.net_worth_cents,
+  ]
+  if (values.every((value) => value === null || value === undefined)) return null
+  return `${label}：资产 ${formatMoney(values[0])} / 负债 ${formatMoney(values[1])} / 净资产 ${formatMoney(values[2])}`
 }
 
 function formatSourceType(preview: ImportPreview): string {
@@ -190,16 +212,23 @@ export default function DataActionsPanel({
                 <>
                   <div className="import-preview-summary">
                     <div><span>文件格式</span><strong>{formatSourceType(dialog.preview)}</strong></div>
-                    <div><span>盘点日期</span><strong>{dialog.preview.total_snapshots}</strong></div>
+                    <div><span>来源项目</span><strong>{dialog.preview.total_snapshots}</strong></div>
                     <div><span>有效明细</span><strong>{dialog.preview.importable_rows} 行</strong></div>
-                    <div><span>解析警告</span><strong>{dialog.preview.warning_rows}</strong></div>
+                    <div><span>阻止 / 忽略</span><strong>{dialog.preview.blocked_snapshots} / {dialog.preview.ignored_snapshots}</strong></div>
                   </div>
                   {formatEncoding(dialog.preview.detected_encoding) && <p className="import-encoding">文本编码：{formatEncoding(dialog.preview.detected_encoding)}</p>}
                   <div className="import-preview-list">
-                    {dialog.preview.snapshots.map((snapshot) => (
-                      <div className={snapshot.will_skip ? 'will-skip' : ''} key={snapshot.snapshot_date}>
-                        <strong>{snapshot.snapshot_date}</strong>
-                        <span>{snapshot.row_count} 行{snapshot.will_skip ? ' · 同名来源已导入，将跳过' : ''}</span>
+                    {dialog.preview.snapshots.map((snapshot, index) => (
+                      <div className={snapshot.will_skip ? 'will-skip' : ''} key={`${snapshot.source_sheet ?? 'source'}-${snapshot.snapshot_date ?? index}`}>
+                        <strong>{snapshot.source_sheet ? `${snapshot.source_sheet} · ` : ''}{snapshot.snapshot_date ?? '无有效日期'}</strong>
+                        <span>{snapshot.row_count} 行 · {PREVIEW_STATUS_LABELS[snapshot.status]} · {snapshot.layout}</span>
+                        {snapshot.source_date && <small>源文件日期：{snapshot.source_date}</small>}
+                        {formatSummary('来源汇总', snapshot.source_summary) && <small>{formatSummary('来源汇总', snapshot.source_summary)}</small>}
+                        <small>{formatSummary('计算汇总', snapshot.calculated_summary)}</small>
+                        {snapshot.differences.length > 0 && (
+                          <small>{snapshot.differences.map((difference) => `${difference.field}：来源 ${formatMoney(difference.source_cents)} / 计算 ${formatMoney(difference.calculated_cents)}${difference.explained ? '（可解释）' : ''}`).join('；')}</small>
+                        )}
+                        {snapshot.blocking_errors.length > 0 && <small>{snapshot.blocking_errors.join('；')}</small>}
                       </div>
                     ))}
                   </div>
@@ -210,7 +239,7 @@ export default function DataActionsPanel({
                     </details>
                   )}
                   {dialog.preview.importable_rows === 0 && (
-                    <div className="notice warning import-dialog-notice"><AlertTriangle size={18} /><div><strong>没有新数据可导入</strong><p>所有日期均已从同名文件导入，系统不会重复写入。</p></div></div>
+                    <div className="notice warning import-dialog-notice"><AlertTriangle size={18} /><div><strong>没有新数据可导入</strong><p>请查看重复、阻止或忽略原因；系统不会写入这些项目。</p></div></div>
                   )}
                   {dialog.phase === 'importing' && <div className="import-progress" role="status"><LoaderCircle className="spin" size={22} /> 正在写入本地数据库…</div>}
                 </>

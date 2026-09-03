@@ -108,9 +108,24 @@ export interface ImportRecord {
 }
 
 export interface ImportPreviewSnapshot {
-  snapshot_date: string
+  snapshot_date: string | null
+  source_date: string | null
   row_count: number
   will_skip: boolean
+  layout: string
+  source_sheet: string | null
+  status: 'importable' | 'duplicate' | 'blocked' | 'ignored'
+  blocking_errors: string[]
+  source_summary: Record<string, number | null>
+  calculated_summary: Totals
+  differences: Array<{
+    field: string
+    source_cents: number
+    calculated_cents: number
+    residual_cents: number
+    explained: boolean
+    reason: string | null
+  }>
   warnings: string[]
 }
 
@@ -122,6 +137,8 @@ export interface ImportPreview {
   total_rows: number
   importable_rows: number
   duplicate_snapshots: number
+  blocked_snapshots: number
+  ignored_snapshots: number
   warning_rows: number
   warnings: string[]
   snapshots: ImportPreviewSnapshot[]

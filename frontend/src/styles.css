@@ -213,6 +213,9 @@ td small { display: block; margin-top: 3px; color: var(--muted); font-size: 12px
 .accounts-layout { display: grid; grid-template-columns: minmax(0, 1fr) 250px; align-items: start; gap: 10px; }
 .accounts-main { min-width: 0; }
 .accounts-section { margin-bottom: 10px; overflow: hidden; }
+.account-type-section { border-top: 1px solid var(--line-soft); }
+.account-type-section h3 { display: flex; align-items: center; gap: 8px; margin: 0; padding: 10px 16px; background: #f7f9fc; color: #304764; font-size: 13px; }
+.account-type-section h3 small { color: var(--muted); font-weight: 500; }
 .account-member-header { align-items: center; padding-block: 10px; border-bottom: 1px solid var(--line-soft); }
 .member-heading { display: flex; align-items: center; gap: 8px; }
 .member-heading h2, .member-heading p { margin: 0; }
@@ -263,6 +266,7 @@ td small { display: block; margin-top: 3px; color: var(--muted); font-size: 12px
 .import-preview-list div:first-child { border-top: 0; }
 .import-preview-list strong { min-width: 0; overflow-wrap: anywhere; font-size: 13px; }
 .import-preview-list span { color: var(--muted); text-align: right; font-size: 12px; }
+.import-preview-list small { width: 100%; color: var(--muted); overflow-wrap: anywhere; }
 .import-preview-list .will-skip { background: #fff9ed; }
 .import-preview-warnings { padding: 10px 12px; color: #76521a; background: #fffaf0; border: 1px solid #eedbb3; border-radius: 8px; font-size: 12px; }
 .import-preview-warnings summary { cursor: pointer; font-weight: 700; }

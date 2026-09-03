@@ -22,7 +22,7 @@ def copy_database(database_path: Path, destination: Path) -> Path:
 
 
 def create_named_backup(database_path: Path, backup_dir: Path, prefix: str = "family_finance") -> Path:
-    stamp = datetime.now().strftime("%Y-%m-%d_%H%M%S")
+    stamp = datetime.now().strftime("%Y-%m-%d_%H%M%S_%f")
     return copy_database(database_path, backup_dir / f"{prefix}_{stamp}.db")
 
 

@@ -147,7 +147,7 @@ def dashboard_to_dict(session: Session) -> dict:
         "wallet": "钱包 / 支付平台",
         "debit_card": "银行存款",
         "investment": "投资",
-        "receivable": "应收款",
+        "receivable": "待收欠款",
         "other_asset": "其他资产",
     }
     for entry in latest.entries:

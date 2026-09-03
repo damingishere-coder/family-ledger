@@ -240,15 +240,15 @@ def test_previous_amount_comes_from_strictly_earlier_month(client, create_accoun
         account = session.get(Account, account_data["id"])
         assert account is not None
         snapshot_ids = []
-        for snapshot_date, amount in (
-            (date(2026, 8, 31), 100),
-            (date(2026, 9, 1), 200),
-            (date(2026, 9, 30), 300),
+        for snapshot_date, amount, status in (
+            (date(2026, 8, 31), 100, "completed"),
+            (date(2026, 9, 1), 200, "draft"),
+            (date(2026, 9, 30), 300, "completed"),
         ):
             snapshot = Snapshot(
                 snapshot_date=snapshot_date,
                 title=f"{snapshot_date.isoformat()} 家庭资产",
-                status="completed",
+                status=status,
             )
             snapshot.entries.append(
                 SnapshotEntry(
