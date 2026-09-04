@@ -12,6 +12,7 @@ from app.importers.legacy_markdown import parse_legacy_markdown
 from app.importers.tabular import parse_csv, parse_excel
 from app.models import ImportRecord, Snapshot
 from app.services.imports import import_snapshots
+from scripts.repair_imported_history import _apply_markdown_exclusions
 
 
 LEGACY_MARKDOWN = """
@@ -334,3 +335,65 @@ def test_commit_false_can_be_rolled_back_as_one_transaction(tmp_path):
         assert session.scalar(select(func.count()).select_from(Snapshot)) == 0
         assert session.scalar(select(func.count()).select_from(ImportRecord)) == 0
     engine.dispose()
+
+
+def test_repair_preserves_markdown_receivable_exclusion():
+    markdown = ParsedSnapshot(
+        snapshot_date=date(2025, 7, 31),
+        source_date=date(2025, 7, 23),
+        entries=[ParsedEntry(
+            member_name="家庭公共",
+            account_name="借款待收回（不计入总数）",
+            account_type="receivable",
+            amount_cents=90_000,
+            include_in_net_worth=False,
+            source_location="第 332 行",
+        )],
+    )
+    excel_entry = ParsedEntry(
+        member_name="家庭公共",
+        account_name="欧总待还款",
+        account_type="receivable",
+        amount_cents=90_000,
+        source_location="家庭存款明细(7月)!第 12 行",
+    )
+    excel = ParsedSnapshot(
+        snapshot_date=date(2025, 7, 31),
+        source_date=date(2025, 7, 23),
+        layout="legacy-family-monthly-matrix",
+        entries=[excel_entry],
+    )
+
+    matches = _apply_markdown_exclusions([markdown], [excel])
+
+    assert excel_entry.include_in_net_worth is False
+    assert matches[0]["amount_cents"] == 90_000
+    assert "第 332 行" in excel_entry.warnings[0]
+
+
+def test_repair_blocks_ambiguous_markdown_receivable_exclusion():
+    markdown = ParsedSnapshot(
+        snapshot_date=date(2025, 7, 31),
+        source_date=date(2025, 7, 23),
+        entries=[ParsedEntry(
+            member_name="家庭公共",
+            account_name="借款待收回（不计入总数）",
+            account_type="receivable",
+            amount_cents=90_000,
+            include_in_net_worth=False,
+        )],
+    )
+    duplicated = [ParsedEntry(
+        member_name="家庭公共",
+        account_name=f"待收欠款 {index}",
+        account_type="receivable",
+        amount_cents=90_000,
+    ) for index in range(2)]
+    excel = ParsedSnapshot(
+        snapshot_date=date(2025, 7, 31),
+        layout="legacy-family-monthly-matrix",
+        entries=duplicated,
+    )
+
+    with pytest.raises(ValueError, match="无法唯一匹配"):
+        _apply_markdown_exclusions([markdown], [excel])

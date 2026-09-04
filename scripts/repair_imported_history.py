@@ -137,6 +137,57 @@ def database_state(session: Session) -> dict:
     return payload
 
 
+def _apply_markdown_exclusions(
+    markdown_snapshots: list[ParsedSnapshot], excel_snapshots: list[ParsedSnapshot],
+) -> list[dict]:
+    excel_by_month = {
+        (snapshot.snapshot_date.year, snapshot.snapshot_date.month): snapshot
+        for snapshot in excel_snapshots
+        if snapshot.snapshot_date is not None and snapshot.status == "importable"
+    }
+    matches: list[dict] = []
+    matched_entry_ids: set[int] = set()
+    for markdown_snapshot in markdown_snapshots:
+        if markdown_snapshot.source_date is None:
+            continue
+        month_key = (markdown_snapshot.source_date.year, markdown_snapshot.source_date.month)
+        excel_snapshot = excel_by_month.get(month_key)
+        for markdown_entry in markdown_snapshot.entries:
+            if markdown_entry.account_type != "receivable" or markdown_entry.include_in_net_worth:
+                continue
+            if markdown_entry.amount_cents is None:
+                raise ValueError(
+                    f"{month_key[0]:04d}-{month_key[1]:02d} 明确不计入的待收欠款金额为空"
+                )
+            candidates = [
+                entry for entry in (excel_snapshot.entries if excel_snapshot else [])
+                if entry.account_type == "receivable"
+                and entry.amount_cents == markdown_entry.amount_cents
+                and id(entry) not in matched_entry_ids
+            ]
+            if len(candidates) != 1:
+                raise ValueError(
+                    f"{month_key[0]:04d}-{month_key[1]:02d} 不计入待收欠款无法唯一匹配："
+                    f"Markdown {markdown_entry.account_name}={markdown_entry.amount_cents}，"
+                    f"Excel 候选 {len(candidates)} 条"
+                )
+            excel_entry = candidates[0]
+            excel_entry.include_in_net_worth = False
+            excel_entry.warnings.append(
+                f"根据 Markdown {markdown_entry.source_location or '来源行'} 明确标记为不计入总数"
+            )
+            matched_entry_ids.add(id(excel_entry))
+            matches.append({
+                "month": f"{month_key[0]:04d}-{month_key[1]:02d}",
+                "markdown_account": markdown_entry.account_name,
+                "excel_account": excel_entry.account_name,
+                "amount_cents": excel_entry.amount_cents,
+                "markdown_location": markdown_entry.source_location,
+                "excel_location": excel_entry.source_location,
+            })
+    return matches
+
+
 def parse_sources(excel_path: Path, markdown_paths: list[Path]) -> tuple[list[ParsedSnapshot], dict]:
     markdown_snapshots: list[ParsedSnapshot] = []
     for path in markdown_paths:
@@ -161,6 +212,7 @@ def parse_sources(excel_path: Path, markdown_paths: list[Path]) -> tuple[list[Pa
         for entry in snapshot.entries:
             if entry.account_type == "credit_card" and entry.institution:
                 entry.billing_day = resolved_days.get((entry.member_name, entry.institution))
+    excluded_receivable_matches = _apply_markdown_exclusions(markdown_snapshots, snapshots)
 
     importable_months = {
         (snapshot.snapshot_date.year, snapshot.snapshot_date.month)
@@ -224,6 +276,7 @@ def parse_sources(excel_path: Path, markdown_paths: list[Path]) -> tuple[list[Pa
             f"{member}/{institution}": day
             for (member, institution), day in sorted(resolved_days.items())
         },
+        "excluded_receivable_matches": excluded_receivable_matches,
         "importable_months": [f"{year:04d}-{month:02d}" for year, month in sorted(importable_months)],
         "blocked_months": [f"{year:04d}-{month:02d}" for year, month in sorted(blocked_months)],
         "ignored_sheets": [snapshot.source_sheet for snapshot in snapshots if snapshot.status == "ignored"],
@@ -452,6 +505,20 @@ def apply_repair(
                 )
                 if not credit_limits:
                     raise ValueError("重建历史丢失了信用额度字段")
+                excluded_receivable_entries = session.scalar(
+                    select(func.count()).select_from(SnapshotEntry).join(
+                        Snapshot, Snapshot.id == SnapshotEntry.snapshot_id
+                    ).where(
+                        Snapshot.legacy_source == "账单.xlsx",
+                        SnapshotEntry.account_type == "receivable",
+                        SnapshotEntry.include_in_net_worth.is_(False),
+                    )
+                )
+                if excluded_receivable_entries != 3:
+                    raise ValueError(
+                        "重建历史应保留 3 条明确不计入总数的待收欠款，"
+                        f"实际 {excluded_receivable_entries} 条"
+                    )
                 violations = session.execute(text("PRAGMA foreign_key_check")).all()
                 if violations:
                     raise ValueError(f"外键校验失败：{violations[:3]}")
