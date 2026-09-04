@@ -1,0 +1,11 @@
+[tool.pytest.ini_options]
+testpaths = ["backend/tests"]
+pythonpath = ["backend"]
+addopts = "--strict-markers --disable-warnings"
+
+[tool.coverage.run]
+source = ["backend/app"]
+
+[tool.coverage.report]
+show_missing = true
+skip_covered = true
