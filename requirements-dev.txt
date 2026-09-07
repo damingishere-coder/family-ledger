@@ -1,0 +1,4 @@
+-r requirements.txt
+httpx2>=2.12,<3
+pytest>=8.4,<9
+pytest-cov>=6.2,<7

@@ -1,0 +1,93 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 820" role="img" aria-labelledby="title description">
+  <title id="title">FamilyLedger 四套 Logo 候选</title>
+  <desc id="description">A 檐下家人，B 账本之家，C 安心家徽，D FL 屋形字母。</desc>
+  <defs>
+    <filter id="shadow" x="-20%" y="-20%" width="140%" height="150%">
+      <feDropShadow dx="0" dy="8" stdDeviation="12" flood-color="#1F3F6F" flood-opacity="0.08"/>
+    </filter>
+    <symbol id="icon-a" viewBox="0 0 64 64">
+      <path d="M8 27 32 7l24 20" fill="none" stroke="#0A63F6" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/>
+      <path d="M13 29v20.5A6.5 6.5 0 0 0 19.5 56h25a6.5 6.5 0 0 0 6.5-6.5V29" fill="none" stroke="#0B1739" stroke-width="4" stroke-linecap="round"/>
+      <circle cx="22" cy="35" r="4" fill="#0A63F6"/><circle cx="32" cy="31.5" r="5" fill="#0A63F6"/><circle cx="42" cy="35" r="4" fill="#0A63F6"/>
+      <path d="M16.5 49v-2a5.5 5.5 0 0 1 11 0v5M26 51v-7a6 6 0 0 1 12 0v7M36.5 52v-5a5.5 5.5 0 0 1 11 0v2" fill="none" stroke="#0A63F6" stroke-width="4" stroke-linecap="round"/>
+    </symbol>
+    <symbol id="icon-b" viewBox="0 0 64 64">
+      <path d="M7 25 32 7l25 18" fill="none" stroke="#0A63F6" stroke-width="5.5" stroke-linecap="round" stroke-linejoin="round"/>
+      <path d="M8 27c9-2 17 .2 24 6v23c-7-5.3-15-7.4-24-5.2Z" fill="#EAF2FF" stroke="#0A63F6" stroke-width="3.5" stroke-linejoin="round"/>
+      <path d="M56 27c-9-2-17 .2-24 6v23c7-5.3 15-7.4 24-5.2Z" fill="#FFFFFF" stroke="#0A63F6" stroke-width="3.5" stroke-linejoin="round"/>
+      <path d="M16 37h8M16 43h10M48 37h-8M48 43H38" fill="none" stroke="#0B1739" stroke-width="3" stroke-linecap="round"/>
+      <circle cx="32" cy="19" r="4" fill="#0B1739"/>
+    </symbol>
+    <symbol id="icon-c" viewBox="0 0 64 64">
+      <path d="M32 5 55 13v17c0 13.8-8.3 24.5-23 30C17.3 54.5 9 43.8 9 30V13Z" fill="#0A63F6"/>
+      <path d="M18 30 32 18l14 12M22 30v14h20V30" fill="none" stroke="#FFFFFF" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
+      <circle cx="32" cy="31.5" r="3.7" fill="#FFFFFF"/>
+      <path d="M25.5 43v-2.2a6.5 6.5 0 0 1 13 0V43" fill="none" stroke="#FFFFFF" stroke-width="3.5" stroke-linecap="round"/>
+    </symbol>
+    <symbol id="icon-d" viewBox="0 0 64 64">
+      <path d="M7 26 32 6l25 20" fill="none" stroke="#0B1739" stroke-width="5.5" stroke-linecap="round" stroke-linejoin="round"/>
+      <path d="M14 28v24h36V28" fill="none" stroke="#0B1739" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/>
+      <path d="M21 49V27h14M21 37h11M39 27v22h12" fill="none" stroke="#0A63F6" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/>
+    </symbol>
+  </defs>
+
+  <rect width="1200" height="820" fill="#F4F7FB"/>
+  <text x="52" y="62" fill="#0B1739" font-family="Segoe UI, Microsoft YaHei, Arial, sans-serif" font-size="32" font-weight="750">FamilyLedger Logo 候选</text>
+  <text x="52" y="96" fill="#64738F" font-family="Segoe UI, Microsoft YaHei, Arial, sans-serif" font-size="16">统一蓝白视觉 · 透明画布 · 无渐变 · 图标与横版字标成套设计</text>
+
+  <g transform="translate(52 126)">
+    <rect width="530" height="310" rx="24" fill="#FFFFFF" stroke="#DCE5F2" filter="url(#shadow)"/>
+    <rect x="28" y="26" width="42" height="42" rx="12" fill="#0A63F6"/>
+    <text x="49" y="55" text-anchor="middle" fill="#FFFFFF" font-family="Segoe UI, Arial, sans-serif" font-size="21" font-weight="750">A</text>
+    <text x="86" y="48" fill="#0B1739" font-family="Segoe UI, Microsoft YaHei, Arial, sans-serif" font-size="23" font-weight="750">檐下家人</text>
+    <text x="86" y="72" fill="#64738F" font-family="Segoe UI, Microsoft YaHei, Arial, sans-serif" font-size="13">家庭感最强 · 最贴近参考图</text>
+    <use href="#icon-a" x="54" y="112" width="112" height="112"/>
+    <use href="#icon-a" x="202" y="119" width="54" height="54"/>
+    <text x="272" y="152" fill="#0B1739" font-family="Segoe UI, Microsoft YaHei, Arial, sans-serif" font-size="22" font-weight="750">家底<tspan fill="#0A63F6"> · </tspan><tspan font-size="17" font-weight="650">FamilyLedger</tspan></text>
+    <text x="202" y="205" fill="#64738F" font-family="Segoe UI, Microsoft YaHei, Arial, sans-serif" font-size="12">小尺寸预览</text>
+    <use href="#icon-a" x="202" y="225" width="16" height="16"/><use href="#icon-a" x="238" y="217" width="32" height="32"/><use href="#icon-a" x="290" y="212" width="42" height="42"/>
+    <text x="202" y="278" fill="#8A97AA" font-family="Segoe UI, Arial, sans-serif" font-size="11">16 px</text><text x="238" y="278" fill="#8A97AA" font-family="Segoe UI, Arial, sans-serif" font-size="11">32 px</text><text x="290" y="278" fill="#8A97AA" font-family="Segoe UI, Arial, sans-serif" font-size="11">42 px</text>
+  </g>
+
+  <g transform="translate(618 126)">
+    <rect width="530" height="310" rx="24" fill="#FFFFFF" stroke="#DCE5F2" filter="url(#shadow)"/>
+    <rect x="28" y="26" width="42" height="42" rx="12" fill="#0A63F6"/>
+    <text x="49" y="55" text-anchor="middle" fill="#FFFFFF" font-family="Segoe UI, Arial, sans-serif" font-size="21" font-weight="750">B</text>
+    <text x="86" y="48" fill="#0B1739" font-family="Segoe UI, Microsoft YaHei, Arial, sans-serif" font-size="23" font-weight="750">账本之家</text>
+    <text x="86" y="72" fill="#64738F" font-family="Segoe UI, Microsoft YaHei, Arial, sans-serif" font-size="13">资产管理寓意明确 · 稳重理性</text>
+    <use href="#icon-b" x="54" y="112" width="112" height="112"/>
+    <use href="#icon-b" x="202" y="119" width="54" height="54"/>
+    <text x="272" y="152" fill="#0B1739" font-family="Segoe UI, Microsoft YaHei, Arial, sans-serif" font-size="22" font-weight="750">家底<tspan fill="#0A63F6"> · </tspan><tspan font-size="17" font-weight="650">FamilyLedger</tspan></text>
+    <text x="202" y="205" fill="#64738F" font-family="Segoe UI, Microsoft YaHei, Arial, sans-serif" font-size="12">小尺寸预览</text>
+    <use href="#icon-b" x="202" y="225" width="16" height="16"/><use href="#icon-b" x="238" y="217" width="32" height="32"/><use href="#icon-b" x="290" y="212" width="42" height="42"/>
+    <text x="202" y="278" fill="#8A97AA" font-family="Segoe UI, Arial, sans-serif" font-size="11">16 px</text><text x="238" y="278" fill="#8A97AA" font-family="Segoe UI, Arial, sans-serif" font-size="11">32 px</text><text x="290" y="278" fill="#8A97AA" font-family="Segoe UI, Arial, sans-serif" font-size="11">42 px</text>
+  </g>
+
+  <g transform="translate(52 468)">
+    <rect width="530" height="310" rx="24" fill="#FFFFFF" stroke="#DCE5F2" filter="url(#shadow)"/>
+    <rect x="28" y="26" width="42" height="42" rx="12" fill="#0A63F6"/>
+    <text x="49" y="55" text-anchor="middle" fill="#FFFFFF" font-family="Segoe UI, Arial, sans-serif" font-size="21" font-weight="750">C</text>
+    <text x="86" y="48" fill="#0B1739" font-family="Segoe UI, Microsoft YaHei, Arial, sans-serif" font-size="23" font-weight="750">安心家徽</text>
+    <text x="86" y="72" fill="#64738F" font-family="Segoe UI, Microsoft YaHei, Arial, sans-serif" font-size="13">本地安全心智突出 · favicon 最醒目</text>
+    <use href="#icon-c" x="54" y="112" width="112" height="112"/>
+    <use href="#icon-c" x="202" y="119" width="54" height="54"/>
+    <text x="272" y="152" fill="#0B1739" font-family="Segoe UI, Microsoft YaHei, Arial, sans-serif" font-size="22" font-weight="750">家底<tspan fill="#0A63F6"> · </tspan><tspan font-size="17" font-weight="650">FamilyLedger</tspan></text>
+    <text x="202" y="205" fill="#64738F" font-family="Segoe UI, Microsoft YaHei, Arial, sans-serif" font-size="12">小尺寸预览</text>
+    <use href="#icon-c" x="202" y="225" width="16" height="16"/><use href="#icon-c" x="238" y="217" width="32" height="32"/><use href="#icon-c" x="290" y="212" width="42" height="42"/>
+    <text x="202" y="278" fill="#8A97AA" font-family="Segoe UI, Arial, sans-serif" font-size="11">16 px</text><text x="238" y="278" fill="#8A97AA" font-family="Segoe UI, Arial, sans-serif" font-size="11">32 px</text><text x="290" y="278" fill="#8A97AA" font-family="Segoe UI, Arial, sans-serif" font-size="11">42 px</text>
+  </g>
+
+  <g transform="translate(618 468)">
+    <rect width="530" height="310" rx="24" fill="#FFFFFF" stroke="#DCE5F2" filter="url(#shadow)"/>
+    <rect x="28" y="26" width="42" height="42" rx="12" fill="#0A63F6"/>
+    <text x="49" y="55" text-anchor="middle" fill="#FFFFFF" font-family="Segoe UI, Arial, sans-serif" font-size="21" font-weight="750">D</text>
+    <text x="86" y="48" fill="#0B1739" font-family="Segoe UI, Microsoft YaHei, Arial, sans-serif" font-size="23" font-weight="750">FL 屋形字母</text>
+    <text x="86" y="72" fill="#64738F" font-family="Segoe UI, Microsoft YaHei, Arial, sans-serif" font-size="13">现代极简 · 英文品牌识别更强</text>
+    <use href="#icon-d" x="54" y="112" width="112" height="112"/>
+    <use href="#icon-d" x="202" y="119" width="54" height="54"/>
+    <text x="272" y="152" fill="#0B1739" font-family="Segoe UI, Microsoft YaHei, Arial, sans-serif" font-size="22" font-weight="750">家底<tspan fill="#0A63F6"> · </tspan><tspan font-size="17" font-weight="650">FamilyLedger</tspan></text>
+    <text x="202" y="205" fill="#64738F" font-family="Segoe UI, Microsoft YaHei, Arial, sans-serif" font-size="12">小尺寸预览</text>
+    <use href="#icon-d" x="202" y="225" width="16" height="16"/><use href="#icon-d" x="238" y="217" width="32" height="32"/><use href="#icon-d" x="290" y="212" width="42" height="42"/>
+    <text x="202" y="278" fill="#8A97AA" font-family="Segoe UI, Arial, sans-serif" font-size="11">16 px</text><text x="238" y="278" fill="#8A97AA" font-family="Segoe UI, Arial, sans-serif" font-size="11">32 px</text><text x="290" y="278" fill="#8A97AA" font-family="Segoe UI, Arial, sans-serif" font-size="11">42 px</text>
+  </g>
+</svg>

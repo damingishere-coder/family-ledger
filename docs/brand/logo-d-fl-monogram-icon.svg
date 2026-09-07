@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-labelledby="title">
+  <title id="title">FamilyLedger FL 屋形字母图标</title>
+  <path d="M7 26 32 6l25 20" fill="none" stroke="#0B1739" stroke-width="5.5" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M14 28v24h36V28" fill="none" stroke="#0B1739" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M21 49V27h14M21 37h11M39 27v22h12" fill="none" stroke="#0A63F6" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>
