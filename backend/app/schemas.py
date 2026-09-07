@@ -89,6 +89,16 @@ class CompleteSnapshotRequest(BaseModel):
     allow_incomplete: bool = False
 
 
+class BatchEntryUpdate(BaseModel):
+    id: int
+    amount_cents: int | None
+    expected_amount_cents: int | None
+
+
+class BatchEntriesUpdate(BaseModel):
+    entries: list[BatchEntryUpdate] = Field(min_length=1)
+
+
 class RestoreMode(BaseModel):
     mode: Literal["replace"] = "replace"
 

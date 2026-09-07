@@ -24,6 +24,7 @@ from ..services.backups import (
     restore_payload,
 )
 from ..services.imports import import_record_to_dict, import_snapshots, preview_snapshots
+from ..services.import_sources import parse_bundle, proposed_entries
 
 
 router = APIRouter(tags=["data"])
@@ -56,7 +57,8 @@ def _parse_legacy_upload(
     if _suffix(filename) not in {"md", "markdown", "txt"}:
         raise ValueError("历史文本仅支持 MD、MARKDOWN 或 TXT 文件")
     text, encoding = decode_text(content)
-    return parse_legacy_markdown(text), "markdown", encoding
+    parsed, _ = parse_bundle([(filename, content)])
+    return proposed_entries(parsed), "markdown", encoding
 
 
 def _parse_tabular_upload(
@@ -65,9 +67,11 @@ def _parse_tabular_upload(
     suffix = _suffix(filename)
     if suffix == "csv":
         snapshots, encoding = parse_csv_with_encoding(content)
-        return snapshots, "csv", encoding
+        parsed, _ = parse_bundle([(filename, content)])
+        return proposed_entries(parsed), "csv", encoding
     if suffix in {"xlsx", "xlsm"}:
-        return parse_excel(content), "xlsx", None
+        parsed, _ = parse_bundle([(filename, content)])
+        return proposed_entries(parsed), "xlsx", None
     raise ValueError("仅支持 CSV、XLSX 或 XLSM 表格，不支持旧版 XLS")
 
 

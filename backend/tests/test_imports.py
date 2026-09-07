@@ -228,7 +228,7 @@ def test_horizontal_markdown_uses_table_semantics_and_normalizes_names():
     assert card.amount_cents == -1_852
     assert card.credit_limit_cents == 6_400_000
     assert card.billing_day == 11
-    receivable = entries[("家庭公共", "借款待收回（不计入总数）")]
+    receivable = entries[("峰峰", "借款待收回（不计入总数）")]
     assert receivable.account_type == "receivable"
     assert receivable.include_in_net_worth is False
     assert not ({"小记", "家庭总余额", "11号"} & {entry.account_name for entry in snapshot.entries})

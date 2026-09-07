@@ -38,7 +38,7 @@ export default function DataPage() {
 
   return (
     <div className="page data-page">
-      <header className="page-header compact-page-header"><div><h1>数据管理</h1><p>导入不擅自修正历史，完整备份始终保存在本地。</p></div></header>
+      <header className="page-header compact-page-header"><div><h1>数据管理</h1><p>先核对来源，再导入或修正历史。每次保存前自动备份。</p></div></header>
       {message && <div className="notice success">{message}</div>}
       {error && <div className="notice error">{error}</div>}
 
@@ -59,7 +59,7 @@ export default function DataPage() {
 
       <section className="panel import-history">
         <div className="panel-header"><div><h2>导入记录</h2><p>原始值、系统重算与警告均可追溯</p></div><span className="record-count">{imports.length} 条记录</span></div>
-        {imports.length ? <div className="import-list">{imports.map((record) => <details key={record.id}><summary><div><strong>{record.source_filename}</strong><span>{new Date(record.imported_at).toLocaleString('zh-CN')}</span></div><div className="import-badges"><span className={`status-badge ${record.status}`}>{record.status}</span><span>成功 {record.success_rows}</span><span>警告 {record.warning_rows}</span><span>错误 {record.error_rows}</span></div></summary><div className="import-report">{record.report.warnings?.length ? <div><h3><AlertTriangle size={15} /> 警告</h3><ul>{record.report.warnings.slice(0, 50).map((item, index) => <li key={`${index}-${item}`}>{item}</li>)}</ul></div> : <p>没有警告。</p>}{record.report.errors?.length ? <div><h3>错误</h3><ul>{record.report.errors.map((item, index) => <li key={`${index}-${item}`}>{item}</li>)}</ul></div> : null}</div></details>)}</div> : <div className="inline-empty">还没有导入记录。</div>}
+        {imports.length ? <div className="import-list">{imports.map((record) => <details key={record.id}><summary><div><strong>{record.source_filename}</strong><span>{new Date(record.imported_at).toLocaleString('zh-CN')}</span></div><div className="import-badges"><span className={`status-badge ${record.status}`}>{{ success: '已完成', warning: '有说明', superseded: '已被修正', failed: '失败' }[record.status] || '待核对'}</span><span>成功 {record.success_rows}</span><span>警告 {record.warning_rows}</span><span>错误 {record.error_rows}</span></div></summary><div className="import-report">{record.report.warnings?.length ? <div><h3><AlertTriangle size={15} /> 警告</h3><ul>{record.report.warnings.slice(0, 50).map((item, index) => <li key={`${index}-${item}`}>{item}</li>)}</ul></div> : <p>没有警告。</p>}{record.report.errors?.length ? <div><h3>错误</h3><ul>{record.report.errors.map((item, index) => <li key={`${index}-${item}`}>{item}</li>)}</ul></div> : null}</div></details>)}</div> : <div className="inline-empty">还没有导入记录。</div>}
       </section>
       <div className="notice warning"><AlertTriangle size={17} /><div><strong>数据安全提示</strong><p>请定期把完整 JSON 备份复制到项目目录以外的位置。</p></div></div>
     </div>

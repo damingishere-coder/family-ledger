@@ -120,7 +120,8 @@ def _reconcile(parsed: ParsedSnapshot) -> tuple[dict, list[str], list[str]]:
             "calculated_cents": calculated_value, "residual_cents": residual,
             "explained": explained, "reason": reason,
         })
-        message = f"{key} 来源 {source_value}，按唯一明细计算 {calculated_value}，差额 {residual}"
+        field_label = {"total_assets_cents": "总资产", "total_liabilities_cents": "总负债", "net_worth_cents": "净资产"}[key]
+        message = f"{field_label} 来源 {source_value / 100:,.2f} 元，按明细计算 {calculated_value / 100:,.2f} 元，差额 {residual / 100:,.2f} 元"
         if explained:
             warnings.append(f"{message}（{reason}）")
         elif parsed.layout == "legacy-family-monthly-matrix":
@@ -139,10 +140,12 @@ def _completed_months(session: Session) -> set[tuple[int, int]]:
     }
 
 
-def _duplicate_entry_errors(parsed: ParsedSnapshot) -> list[str]:
+def _duplicate_entry_errors(parsed: ParsedSnapshot, *, require_resolved: bool = True) -> list[str]:
     seen: set[tuple[str, str, str, str | None]] = set()
     errors: list[str] = []
     for entry in parsed.entries:
+        if require_resolved and (entry.ownership_unresolved or entry.type_unresolved):
+            errors.append(f"{entry.account_name}：归属或收付款方向不明确，请使用联合导入核对页面确认")
         key = (entry.member_name, entry.account_type, entry.account_name, entry.institution)
         if key in seen:
             errors.append(f"同一快照存在重复账户：{entry.member_name}/{entry.account_name}")

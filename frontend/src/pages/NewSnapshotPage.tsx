@@ -1,12 +1,13 @@
 import { AlertTriangle, Check, Keyboard, Save, Sparkles } from 'lucide-react'
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import EmptyState from '../components/EmptyState'
 import LoadingState from '../components/LoadingState'
 import { ACCOUNT_TYPE_LABELS, groupEntries } from '../lib/accounts'
 import { api, ApiError, errorMessage } from '../lib/api'
 import { currentMonthLocal, formatSnapshotMonth, monthEndDate, snapshotMonth } from '../lib/month'
-import { calculateEntries, centsToInput, formatMoney, parseAmountToCents } from '../lib/money'
+import { calculateEntries, formatMoney, parseAmountToCents } from '../lib/money'
+import { useAmountEditor, useSaveBeforeLeave } from '../lib/useAmountEditor'
 import type { Account, Snapshot } from '../types'
 
 interface MonthConflict {
@@ -27,102 +28,42 @@ const assetInputTypes = ['wallet', 'debit_card', 'investment', 'receivable', 'ot
 const liabilityInputTypes = ['credit_card', 'other_liability'] as const
 
 export default function NewSnapshotPage() {
-  const [snapshot, setSnapshot] = useState<Snapshot | null>(null)
+  const { snapshot, values, error, setError, saving, saveStatus, initialize: initializeValues,
+    changeValue, saveAll, dirty } = useAmountEditor()
+  const leaving = useSaveBeforeLeave(dirty, saveAll)
   const [accountsReady, setAccountsReady] = useState<boolean | null>(null)
   const [selectedMonth, setSelectedMonth] = useState(currentMonthLocal())
+  const [draftInfo, setDraftInfo] = useState<Snapshot | null>(null)
+  const [working, setWorking] = useState(false)
   const [existingMonth, setExistingMonth] = useState<MonthConflict | null>(null)
-  const [values, setValues] = useState<Record<number, string>>({})
-  const [fieldErrors, setFieldErrors] = useState<Record<number, string>>({})
-  const [saveStatus, setSaveStatus] = useState('准备中…')
-  const [error, setError] = useState('')
-  const timers = useRef(new Map<number, ReturnType<typeof setTimeout>>())
   const inputRefs = useRef<Array<HTMLInputElement | null>>([])
   const navigate = useNavigate()
-
-  const initializeValues = useCallback((data: Snapshot) => {
-    setSnapshot(data)
-    setSelectedMonth(snapshotMonth(data.snapshot_date))
-    setExistingMonth(null)
-    setValues(Object.fromEntries((data.entries ?? []).map((entry) => [entry.id, centsToInput(entry.amount_cents)])))
-    setSaveStatus('草稿已就绪')
-  }, [])
-
+  const busy = working || leaving
   useEffect(() => {
     let active = true
-    api.get<Account[]>('/accounts?include_archived=false').then(async (accounts) => {
-      if (!active) return
-      setAccountsReady(accounts.length > 0)
-      if (!accounts.length) return
-      try {
-        const month = currentMonthLocal()
-        const data = await api.post<Snapshot>('/snapshots', { snapshot_date: monthEndDate(month) })
-        if (active) initializeValues(data)
-      } catch (reason) {
+    Promise.all([api.get<Account[]>('/accounts?include_archived=false'), api.get<Snapshot | null>('/snapshots/active-draft')])
+      .then(([accounts, draft]) => {
         if (!active) return
-        const conflict = monthConflict(reason)
-        if (conflict) {
-          setSelectedMonth(conflict.snapshot_month)
-          setExistingMonth(conflict)
-          setSaveStatus('该月盘点已完成')
-        } else {
-          setError(errorMessage(reason))
-        }
-      }
-    }).catch((reason) => active && setError(errorMessage(reason)))
-    return () => {
-      active = false
-      timers.current.forEach(clearTimeout)
-    }
-  }, [initializeValues])
-
-  const persistEntry = useCallback(async (entryId: number, raw: string) => {
-    if (!snapshot) return
+        setAccountsReady(accounts.length > 0); setDraftInfo(draft)
+        if (draft) setSelectedMonth(snapshotMonth(draft.snapshot_date))
+      }).catch(reason => { if (active) setError(errorMessage(reason)) })
+    return () => { active = false }
+  }, [setError])
+  const begin = async () => {
+    setWorking(true); setError(''); setExistingMonth(null)
     try {
-      const amount = parseAmountToCents(raw)
-      setFieldErrors((current) => { const next = { ...current }; delete next[entryId]; return next })
-      setSaveStatus('正在自动保存…')
-      const updated = await api.put<Snapshot>(`/snapshots/${snapshot.id}/entries/${entryId}`, { amount_cents: amount })
-      setSnapshot(updated)
-      setSaveStatus(`已自动保存 ${new Date().toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' })}`)
+      const data = await api.post<Snapshot>('/snapshots', { snapshot_date: monthEndDate(selectedMonth) })
+      initializeValues(data); setSelectedMonth(snapshotMonth(data.snapshot_date))
     } catch (reason) {
-      setFieldErrors((current) => ({ ...current, [entryId]: errorMessage(reason) }))
-      setSaveStatus('有内容尚未保存')
-    }
-  }, [snapshot])
-
-  const changeValue = (entryId: number, raw: string) => {
-    setValues((current) => ({ ...current, [entryId]: raw }))
-    setSaveStatus('等待自动保存…')
-    const existing = timers.current.get(entryId)
-    if (existing) clearTimeout(existing)
-    timers.current.set(entryId, setTimeout(() => persistEntry(entryId, raw), 550))
+      const conflict = monthConflict(reason)
+      if (conflict) setExistingMonth(conflict)
+      else setError(errorMessage(reason))
+    } finally { setWorking(false) }
   }
-
-  const saveAll = async () => {
-    if (!snapshot) return false
-    timers.current.forEach(clearTimeout)
-    timers.current.clear()
-    setSaveStatus('正在保存全部内容…')
-    try {
-      for (const entry of snapshot.entries ?? []) {
-        const amount = parseAmountToCents(values[entry.id] ?? '')
-        if (amount !== entry.amount_cents) {
-          const updated = await api.put<Snapshot>(`/snapshots/${snapshot.id}/entries/${entry.id}`, { amount_cents: amount })
-          setSnapshot(updated)
-        }
-      }
-      setFieldErrors({})
-      setSaveStatus('草稿已保存')
-      return true
-    } catch (reason) {
-      setError(errorMessage(reason))
-      setSaveStatus('保存失败')
-      return false
-    }
-  }
-
   const complete = async () => {
-    if (!snapshot || !(await saveAll())) return
+    if (!snapshot || busy) return
+    setWorking(true)
+    if (!(await saveAll())) { setWorking(false); return }
     try {
       const completed = await api.post<Snapshot>(`/snapshots/${snapshot.id}/complete`, { allow_incomplete: false })
       navigate(`/snapshots/${completed.id}`)
@@ -147,37 +88,26 @@ export default function NewSnapshotPage() {
       } else {
         setError(errorMessage(reason))
       }
-    }
+    } finally { setWorking(false) }
   }
 
   const updateMonth = async (month: string) => {
     if (!month) return
     setError('')
     setExistingMonth(null)
-    if (!snapshot) {
-      setSelectedMonth(month)
-      try {
-        initializeValues(await api.post<Snapshot>('/snapshots', { snapshot_date: monthEndDate(month) }))
-      } catch (reason) {
-        const conflict = monthConflict(reason)
-        if (conflict) {
-          setExistingMonth(conflict)
-          setSelectedMonth(conflict.snapshot_month)
-        } else {
-          setError(errorMessage(reason))
-        }
-      }
-      return
-    }
+    if (!snapshot) { setSelectedMonth(month); return }
+    setWorking(true)
+    if (!(await saveAll())) { setWorking(false); return }
     const previousMonth = snapshotMonth(snapshot.snapshot_date)
     try {
       initializeValues(await api.patch<Snapshot>(`/snapshots/${snapshot.id}`, { snapshot_date: monthEndDate(month) }))
+      setSelectedMonth(month)
     } catch (reason) {
       setSelectedMonth(previousMonth)
       const conflict = monthConflict(reason)
       if (conflict) setExistingMonth(conflict)
       else setError(errorMessage(reason))
-    }
+    } finally { setWorking(false) }
   }
 
   const totals = useMemo(() => calculateEntries(snapshot?.entries ?? [], values), [snapshot?.entries, values])
@@ -191,19 +121,18 @@ export default function NewSnapshotPage() {
     }
   }
 
-  if (error && !snapshot) return <div className="notice error">{error}</div>
+  if (error && accountsReady === null) return <div className="page"><div className="notice error">{error}</div></div>
   if (accountsReady === null) return <LoadingState label="正在准备本期盘点…" />
-  if (!accountsReady) return <div className="page"><header className="page-header compact-page-header"><div><h1>开始盘点</h1><p>快速录入本期账户余额</p></div></header><EmptyState title="先创建家庭成员和账户" description="盘点会自动复制全部未归档账户，但不会把上一期金额填入本期。" action={<Link className="button primary" to="/accounts">前往账户管理</Link>} /></div>
-  if (!snapshot && existingMonth) return <div className="page"><header className="page-header snapshot-header conflict-header"><div><h1>开始盘点</h1><p><Keyboard size={14} /> 每个自然月只保留一份已完成盘点</p></div><div className="snapshot-actions"><label>盘点月份<input type="month" value={selectedMonth} onChange={(event) => updateMonth(event.target.value)} /></label></div></header><EmptyState title={`${formatSnapshotMonth(existingMonth.snapshot_month)}盘点已完成`} description="该月份已经有一份可靠快照。你可以直接查看并编辑金额，或选择其他月份。" action={<Link className="button primary" to={`/snapshots/${existingMonth.snapshot_id}`}>查看本月盘点</Link>} /></div>
-  if (!snapshot) return <LoadingState label="正在创建安全草稿…" />
+  if (!accountsReady) return <div className="page"><header className="page-header compact-page-header"><div><h1>月度盘点</h1><p>快速录入本期账户余额</p></div></header><EmptyState title="先创建家庭成员和账户" description="盘点会自动复制全部未归档账户，但不会把上一期金额填入本期。" action={<Link className="button primary" to="/accounts">前往账户管理</Link>} /></div>
+  if (!snapshot) return <div className="page"><header className="page-header"><div><h1>月度盘点</h1><p>先选择月份，再填写每个账户的当前余额。</p></div></header><>{error && <div className="notice error">{error}</div>}<section className="panel month-start"><h2>{draftInfo ? '有一份未完成的盘点' : '开始一次家庭资产盘点'}</h2><p>{draftInfo ? `${formatSnapshotMonth(draftInfo.snapshot_date)}的输入已保存，继续即可接着填写。` : '上期余额会显示在旁边供参考，本期金额保持空白。'}</p><label>盘点月份<input type="month" aria-label="盘点月份" value={selectedMonth} disabled={!!draftInfo || working} onChange={e => { setSelectedMonth(e.target.value); setExistingMonth(null) }} /></label><button className="button primary" disabled={working || !selectedMonth} onClick={() => void begin()}>{working ? '正在准备…' : draftInfo ? '继续草稿' : '开始填写'}</button>{existingMonth && <div className="notice warning">该月已有完成记录。<Link className="text-link" to={`/snapshots/${existingMonth.snapshot_id}`}>查看本月盘点</Link></div>}</section></></div>
 
   let inputIndex = -1
   return (
     <div className="page snapshot-page">
       <header className="page-header snapshot-header">
         <div className="snapshot-header-main">
-          <div><h1>开始盘点</h1><p><Keyboard size={14} /> Enter / ↓ 下一项，↑ 上一项，Tab 正常切换</p></div>
-          <div className="snapshot-actions"><label>盘点月份<input type="month" value={selectedMonth} onChange={(event) => updateMonth(event.target.value)} /></label><button className="button secondary" onClick={saveAll}><Save size={16} /> 保存草稿</button><button className="button primary" onClick={complete}><Sparkles size={16} /> 完成盘点</button></div>
+          <div><h1>月度盘点</h1><p><Keyboard size={14} /> Enter / ↓ 下一项，↑ 上一项，Tab 正常切换</p></div>
+          <div className="snapshot-actions"><label>盘点月份<input type="month" value={selectedMonth} disabled={busy} onChange={(event) => updateMonth(event.target.value)} /></label><button className="button secondary" disabled={busy || saving} onClick={() => void saveAll()}><Save size={16} /> 保存草稿</button><button className="button primary" disabled={busy} onClick={() => void complete()}><Sparkles size={16} /> 完成盘点</button></div>
         </div>
         <div className="snapshot-progress">
           <div className="progress-track"><span style={{ width: `${totals.total_entries ? totals.completed_entries / totals.total_entries * 100 : 0}%` }} /></div>
@@ -219,7 +148,7 @@ export default function NewSnapshotPage() {
           <div className="member-section-header"><div className="member-avatar">{memberName.slice(0, 1)}</div><div><h2>{memberName}</h2><p>{Object.values(typeGroups).flat().length} 个账户</p></div></div>
           <div className="member-entry-columns">
             {[
-              { key: 'assets', label: '现金与储蓄账户', types: assetInputTypes },
+              { key: 'assets', label: '资产与待收款', types: assetInputTypes },
               { key: 'liabilities', label: '信用卡与负债账户', types: liabilityInputTypes },
             ].map((column) => {
               const columnEntries = column.types.flatMap((type) => typeGroups[type] ?? [])
@@ -234,7 +163,7 @@ export default function NewSnapshotPage() {
                     try { currentCents = parseAmountToCents(values[entry.id] ?? '') } catch { /* field shows the validation error */ }
                     const change = currentCents !== null && entry.previous_amount_cents !== null ? currentCents - entry.previous_amount_cents : null
                     const largeChange = change !== null && Math.abs(change) >= 100_000 && Math.abs(change) >= Math.max(Math.abs(entry.previous_amount_cents ?? 0), 10_000) * 5
-                    return <div className="entry-row" key={entry.id}><div className="account-cell"><strong>{entry.account_name}</strong><small>{entry.institution || ACCOUNT_TYPE_LABELS[entry.account_type]}{!entry.include_in_net_worth ? ' · 不计入' : ''}</small></div><span className="previous-value">{formatMoney(entry.previous_amount_cents)}</span><div className="input-cell"><span>¥</span><input ref={(element) => { inputRefs.current[currentIndex] = element }} className={`money-input ${fieldErrors[entry.id] ? 'invalid' : ''}`} inputMode="decimal" placeholder="请输入" value={values[entry.id] ?? ''} onChange={(event) => changeValue(entry.id, event.target.value)} onKeyDown={(event) => { if (event.key === 'Enter' || event.key === 'ArrowDown') { event.preventDefault(); navigateInput(currentIndex, 1) } else if (event.key === 'ArrowUp') { event.preventDefault(); navigateInput(currentIndex, -1) } }} />{fieldErrors[entry.id] && <small className="field-error">{fieldErrors[entry.id]}</small>}</div><span className={change !== null && change < 0 ? 'negative' : 'positive'}>{formatMoney(change, true)}{largeChange && <span className="change-warning" title="较上期变化较大，请确认金额"><AlertTriangle size={13} /></span>}</span></div>
+                    return <div className="entry-row" key={entry.id}><div className="account-cell"><strong>{entry.account_name}</strong><small>{entry.institution || ACCOUNT_TYPE_LABELS[entry.account_type]}{!entry.include_in_net_worth ? ' · 不计入' : ''}</small></div><span className="previous-value">{formatMoney(entry.previous_amount_cents)}</span><div className="input-cell"><span>¥</span><input ref={(element) => { inputRefs.current[currentIndex] = element }} className="money-input" disabled={busy} aria-label={`${memberName} ${entry.account_name} 本期余额`} inputMode="decimal" placeholder="请输入" value={values[entry.id] ?? ''} onChange={(event) => changeValue(entry.id, event.target.value)} onKeyDown={(event) => { if (event.key === 'Enter' || event.key === 'ArrowDown') { event.preventDefault(); navigateInput(currentIndex, 1) } else if (event.key === 'ArrowUp') { event.preventDefault(); navigateInput(currentIndex, -1) } }} /></div><span className={change !== null && (column.key === 'liabilities' ? change > 0 : change < 0) ? 'negative' : 'positive'}>{formatMoney(change, true)}{largeChange && <span className="change-warning" title="较上期变化较大，请确认金额"><AlertTriangle size={13} /></span>}</span></div>
                   }) : <div className="inline-empty compact-empty">暂无账户</div>}
                 </div>
               )

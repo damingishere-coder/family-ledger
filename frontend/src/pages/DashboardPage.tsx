@@ -17,8 +17,9 @@ import EmptyState from '../components/EmptyState'
 import LoadingState from '../components/LoadingState'
 import { api, errorMessage } from '../lib/api'
 import { formatSnapshotMonth, formatSnapshotMonthShort } from '../lib/month'
-import { formatMoney } from '../lib/money'
-import type { DashboardData } from '../types'
+import { currentMonthLocal } from '../lib/month'
+import { formatMoney, formatChartMoney } from '../lib/money'
+import type { DashboardData, Snapshot } from '../types'
 
 type Metric = 'net_worth_cents' | 'total_assets_cents' | 'total_liabilities_cents'
 
@@ -39,31 +40,44 @@ export default function DashboardPage() {
   const [data, setData] = useState<DashboardData | null>(null)
   const [error, setError] = useState('')
   const [metric, setMetric] = useState<Metric>('net_worth_cents')
+  const [draft, setDraft] = useState<Snapshot | null>(null)
+  const [switching, setSwitching] = useState(false)
 
   useEffect(() => {
-    api.get<DashboardData>('/dashboard').then(setData).catch((reason) => setError(errorMessage(reason)))
+    Promise.all([api.get<DashboardData>('/dashboard'), api.get<Snapshot | null>('/snapshots/active-draft')])
+      .then(([dashboard, activeDraft]) => { setData(dashboard); setDraft(activeDraft) })
+      .catch((reason) => setError(errorMessage(reason)))
   }, [])
 
   const previous = data?.trend.at(-2)
   const composition = useMemo(
-    () => (data?.composition ?? []).map((item) => ({ ...item, chartValue: Math.abs(item.amount_cents) })),
+    () => (data?.composition ?? []).map((item) => ({ ...item, chartValue: item.amount_cents })),
     [data?.composition],
   )
   const compositionTotal = composition.reduce((total, item) => total + item.chartValue, 0)
 
   if (error) return <div className="page"><div className="notice error">{error}</div></div>
   if (!data) return <LoadingState label="正在读取家庭资产…" />
+  const completed = data.recent.find(s => s.snapshot_date.startsWith(currentMonthLocal()))
 
   return (
     <div className="page dashboard-page">
       <header className="page-header compact-page-header">
         <div>
           <h1>概览</h1>
-          <p>{data.snapshot_date ? `最近盘点：${formatSnapshotMonth(data.snapshot_date)}` : '建立账户后即可开始第一次家庭资产盘点。'}</p>
+          <p>{data.snapshot_date ? `${formatSnapshotMonth(data.snapshot_date)} · ${data.source ? '历史导入' : '手工录入'} · ${data.current?.total_entries ?? 0} 个账户` : '建立账户后即可开始第一次家庭资产盘点。'}</p>
         </div>
-        <Link className="button primary" to="/snapshot/new">
-          <Plus size={16} /> 新建本期盘点
+        <div className="button-row">
+        {data.periods?.length ? <select aria-label="查看盘点月份" value={data.snapshot_id} disabled={switching} onChange={async event => {
+          setSwitching(true)
+          try { setData(await api.get<DashboardData>(`/dashboard?snapshot_id=${event.target.value}`)) }
+          catch (reason) { setError(errorMessage(reason)) }
+          finally { setSwitching(false) }
+        }}>{data.periods.map(period => <option key={period.id} value={period.id}>{formatSnapshotMonth(period.date)}</option>)}</select> : null}
+        <Link className="button primary" to={draft ? '/snapshot/new' : completed ? `/snapshots/${completed.id}` : '/snapshot/new'}>
+          <Plus size={16} /> {draft ? '继续草稿' : completed ? '查看本月盘点' : '开始本月盘点'}
         </Link>
+        </div>
       </header>
 
       {!data.current ? (
@@ -79,6 +93,7 @@ export default function DashboardPage() {
         />
       ) : (
         <>
+          {data.previous_entry_count != null && data.current.total_entries < data.previous_entry_count && <div className="notice warning">本期记录 {data.current.total_entries} 个账户，上期为 {data.previous_entry_count} 个。这里只统计本期明细，不会自动沿用未录入账户的上期余额。</div>}
           <section className="kpi-grid">
             {[
               { label: '家庭净资产', value: data.current.net_worth_cents, previous: previous?.net_worth_cents, icon: WalletCards },
@@ -93,9 +108,9 @@ export default function DashboardPage() {
                   <div className="kpi-label"><Icon size={16} /> {label}</div>
                   <strong>{formatMoney(value)}</strong>
                   {rate === null ? (
-                    <span>{label === '投资资产' ? '投资账户合计' : '首期数据'}</span>
+                    <span>{label === '投资资产' ? '投资账户合计' : delta !== null ? `较上期 ${formatMoney(delta, true)}` : '首期数据'}</span>
                   ) : (
-                    <span className={delta !== null && delta < 0 ? 'negative' : 'positive'}>
+                    <span className={delta !== null && (label === '总负债' ? delta > 0 : delta < 0) ? 'negative' : 'positive'}>
                       {delta !== null && delta < 0 ? <TrendingDown size={14} /> : <TrendingUp size={14} />}
                       较上期 {rate > 0 ? '+' : ''}{rate.toFixed(2)}%
                     </span>
@@ -103,6 +118,13 @@ export default function DashboardPage() {
                 </article>
               )
             })}
+          </section>
+
+          <section className="member-overview" aria-label="成员资产汇总">
+            {data.members.map(member => <Link className="panel member-overview-card" to={`/snapshots/${data.snapshot_id}`} key={member.name}>
+              <h2>{member.name}</h2><span>净资产</span><strong>{formatMoney(member.net_worth_cents)}</strong>
+              <p>资产 {formatMoney(member.assets_cents)} · 负债 {formatMoney(member.liabilities_cents)}</p><span className="text-link">查看账户明细 <ArrowRight size={14} /></span>
+            </Link>)}
           </section>
 
           <section className="dashboard-grid">
@@ -120,7 +142,7 @@ export default function DashboardPage() {
                   <LineChart data={data.trend} margin={{ top: 10, right: 18, left: 4, bottom: 2 }}>
                     <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e8eef7" />
                     <XAxis dataKey="date" tickFormatter={(value) => formatSnapshotMonthShort(String(value))} tickLine={false} axisLine={false} />
-                    <YAxis tickFormatter={(value) => `${Math.round(Number(value) / 10_000)}万`} tickLine={false} axisLine={false} width={52} />
+                    <YAxis tickFormatter={(value) => formatChartMoney(Number(value))} tickLine={false} axisLine={false} width={52} />
                     <Tooltip formatter={(value) => formatMoney(Number(value))} labelFormatter={(value) => `盘点月份 ${formatSnapshotMonth(String(value))}`} />
                     <Line type="monotone" dataKey={metric} name={metricLabels[metric]} stroke="#0a63f6" strokeWidth={2.5} dot={{ r: 3, fill: '#0a63f6', strokeWidth: 0 }} activeDot={{ r: 5 }} />
                   </LineChart>
@@ -129,8 +151,8 @@ export default function DashboardPage() {
             </article>
 
             <article className="panel composition-panel">
-              <div className="panel-header"><div><h2>资产构成</h2><p>最近一期计入净资产的资产</p></div></div>
-              {composition.length && compositionTotal ? (
+              <div className="panel-header"><div><h2>资产构成</h2><p>所选月份计入净资产的资产</p></div></div>
+              {composition.some(item => item.amount_cents < 0) ? <div className="signed-composition"><p className="muted">存在负余额，按实际金额展示</p>{composition.map(item => <div key={item.name}><span>{item.name}</span><strong>{formatMoney(item.amount_cents)}</strong></div>)}</div> : composition.length && compositionTotal ? (
                 <div className="composition-content">
                   <div className="donut-wrap">
                     <ResponsiveContainer width="100%" height="100%">

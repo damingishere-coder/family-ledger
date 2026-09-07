@@ -24,6 +24,9 @@ class ParsedEntry:
     billing_day: int | None = None
     source_sheet: str | None = None
     source_location: str | None = None
+    source_filename: str | None = None
+    ownership_unresolved: bool = False
+    type_unresolved: bool = False
 
 
 @dataclass

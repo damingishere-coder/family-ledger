@@ -56,6 +56,8 @@ export interface SnapshotEntry {
   notes: string | null
   legacy_raw_name: string | null
   legacy_raw_value: string | null
+  source_file?: string | null
+  source_location?: string | null
 }
 
 export interface Snapshot extends Totals {
@@ -70,6 +72,9 @@ export interface Snapshot extends Totals {
 }
 
 export interface DashboardData {
+  periods?: Array<{ id: number; date: string }>
+  source?: string | null
+  previous_entry_count?: number | null
   current: Totals | null
   snapshot_id?: number
   snapshot_date?: string

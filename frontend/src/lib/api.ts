@@ -63,6 +63,11 @@ export const api = {
     form.append('file', file)
     return request<T>(path, { method: 'POST', body: form })
   },
+  uploadMany: <T>(path: string, files: File[]) => {
+    const form = new FormData()
+    files.forEach((file) => form.append('files', file))
+    return request<T>(path, { method: 'POST', body: form })
+  },
 }
 
 export function errorMessage(error: unknown): string {

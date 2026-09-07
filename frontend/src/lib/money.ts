@@ -72,3 +72,8 @@ export function calculateEntries(
     total_entries: entries.length,
   }
 }
+
+/** Chart data is stored in cents: one 万元 is 1,000,000 cents. */
+export function formatChartMoney(cents: number): string {
+  return `${new Intl.NumberFormat('zh-CN', { maximumFractionDigits: 2 }).format(cents / 1_000_000)}万`
+}
