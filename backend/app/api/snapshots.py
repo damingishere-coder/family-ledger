@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from fastapi import APIRouter, Depends, HTTPException, Query
-from sqlalchemy import extract, select
+from sqlalchemy import extract, select, text
 from sqlalchemy.orm import Session, selectinload
 
 from ..database import get_session
@@ -11,6 +11,7 @@ from ..schemas import (
     EntryUpdate,
     SnapshotCreate,
     SnapshotUpdate,
+    BatchEntriesUpdate,
 )
 from ..services.serializers import snapshot_to_dict
 from ..services.snapshots import (
@@ -94,6 +95,25 @@ def update_entry(
     entry.amount_cents = payload.amount_cents
     if "notes" in payload.model_fields_set:
         entry.notes = payload.notes
+    session.commit()
+    return snapshot_to_dict(session, get_snapshot_or_404(session, snapshot_id))
+
+
+@router.put("/{snapshot_id}/entries")
+def update_entries(snapshot_id: int, payload: BatchEntriesUpdate, session: Session = Depends(get_session)):
+    session.execute(text("BEGIN IMMEDIATE"))
+    snapshot = get_snapshot_or_404(session, snapshot_id)
+    entries = {entry.id: entry for entry in snapshot.entries}
+    if len({item.id for item in payload.entries}) != len(payload.entries):
+        raise HTTPException(422, "同一条目不能重复提交")
+    for item in payload.entries:
+        entry = entries.get(item.id)
+        if entry is None:
+            raise HTTPException(404, "未找到该盘点条目")
+        if entry.amount_cents != item.expected_amount_cents:
+            raise HTTPException(409, "金额已在其他页面修改，本次内容未覆盖，请重新核对")
+    for item in payload.entries:
+        entries[item.id].amount_cents = item.amount_cents
     session.commit()
     return snapshot_to_dict(session, get_snapshot_or_404(session, snapshot_id))
 

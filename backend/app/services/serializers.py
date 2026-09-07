@@ -6,7 +6,7 @@ from collections import defaultdict
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
-from ..models import Account, HouseholdMember, Snapshot, SnapshotEntry
+from ..models import Account, HouseholdMember, ImportRecord, Snapshot, SnapshotEntry
 from .calculations import ASSET_TYPES, calculate_totals
 
 
@@ -110,13 +110,20 @@ def snapshot_to_dict(session: Session, snapshot: Snapshot, include_entries: bool
         **totals.__dict__,
     }
     if include_entries:
+        provenance = {}
+        if snapshot.legacy_source:
+            for report in session.scalars(select(ImportRecord.report_json).order_by(ImportRecord.id)):
+                provenance.update(json.loads(report).get("entry_baselines", {}))
         result["entries"] = [
-            entry_to_dict(entry, amounts.get(entry.account_id)) for entry in snapshot.entries
+            {**entry_to_dict(entry, amounts.get(entry.account_id)),
+             "source_file": provenance.get(str(entry.id), {}).get("source_file", snapshot.legacy_source),
+             "source_location": provenance.get(str(entry.id), {}).get("source_location")}
+            for entry in snapshot.entries
         ]
     return result
 
 
-def dashboard_to_dict(session: Session) -> dict:
+def dashboard_to_dict(session: Session, snapshot_id: int | None = None) -> dict:
     snapshots = list(
         session.scalars(
             select(Snapshot)
@@ -135,9 +142,15 @@ def dashboard_to_dict(session: Session) -> dict:
         }
 
     summaries = [snapshot_to_dict(session, item, include_entries=False) for item in snapshots]
-    latest = snapshots[-1]
+    selected_index = len(snapshots) - 1
+    if snapshot_id is not None:
+        matches = [i for i, item in enumerate(snapshots) if item.id == snapshot_id]
+        if not matches:
+            raise ValueError("未找到该月份的已完成盘点")
+        selected_index = matches[0]
+    latest = snapshots[selected_index]
     latest_totals = calculate_totals(latest.entries)
-    previous_net = summaries[-2]["net_worth_cents"] if len(summaries) > 1 else None
+    previous_net = summaries[selected_index - 1]["net_worth_cents"] if selected_index > 0 else None
 
     composition_totals: dict[str, int] = defaultdict(int)
     member_buckets: dict[str, dict[str, int]] = defaultdict(
@@ -165,6 +178,9 @@ def dashboard_to_dict(session: Session) -> dict:
         "current": latest_totals.__dict__,
         "snapshot_id": latest.id,
         "snapshot_date": latest.snapshot_date.isoformat(),
+        "source": latest.legacy_source,
+        "previous_entry_count": len(snapshots[selected_index - 1].entries) if selected_index > 0 else None,
+        "periods": [{"id": s.id, "date": s.snapshot_date.isoformat()} for s in reversed(snapshots)],
         "change_from_previous_cents": latest_totals.net_worth_cents - previous_net
         if previous_net is not None
         else None,
@@ -176,7 +192,7 @@ def dashboard_to_dict(session: Session) -> dict:
                 "total_liabilities_cents": item["total_liabilities_cents"],
                 "net_worth_cents": item["net_worth_cents"],
             }
-            for item in summaries
+            for item in summaries[:selected_index + 1]
         ],
         "composition": [
             {"name": key, "amount_cents": value}

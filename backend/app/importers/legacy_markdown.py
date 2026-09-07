@@ -27,7 +27,6 @@ SUMMARY_KEYS = {
     "净资产": "net_worth_cents", "顺差": "net_worth_cents",
 }
 SKIP_NAMES = {"账户", "银行", "名称", "项目", "合计", "小计", "小记", "总计", "家庭总余额"}
-SHARED_INVESTMENTS = {"黄金etf", "基金", "京东金融"}
 
 
 def _member_from_heading(line: str) -> str | None:
@@ -54,7 +53,7 @@ def _entry(
     *, member: str, name: str, account_type: str, amount_raw: object,
     line_number: int, institution: str | None = None,
     credit_limit_raw: object | None = None, billing_day: int | None = None,
-    include: bool = True,
+    include: bool = True, type_unresolved: bool = False,
 ) -> ParsedEntry:
     amount, warnings = parse_money_to_cents(amount_raw)
     credit_limit = None
@@ -69,7 +68,7 @@ def _entry(
         credit_limit_cents=credit_limit, include_in_net_worth=include,
         institution=institution, billing_day=billing_day, raw_name=name,
         raw_value="" if amount_raw is None else str(amount_raw), source_location=f"第 {line_number} 行",
-        warnings=warnings,
+        warnings=warnings, type_unresolved=type_unresolved,
     )
 
 
@@ -96,15 +95,13 @@ def _parse_account_line(line: str, member: str, category: str | None, line_numbe
     if account_type in {"credit_card", "debit_card"}:
         institution = re.sub(r"(信用卡|储蓄卡|借记卡).*$", "", name).strip()
     return _entry(
-        member=(
-            "家庭公共"
-            if account_type in {"receivable", "other_liability"} or name.lower() in SHARED_INVESTMENTS
-            else member
-        ),
+        member=member,
         name=name, account_type=account_type, amount_raw=value_text,
         line_number=line_number, institution=institution,
         credit_limit_raw=limit_match.group(1) if limit_match else None,
         include="不计入总数" not in name,
+        type_unresolved=any(word in name for word in ("借款", "待还款")) and not any(
+            word in f"{name} {category or ''}" for word in ("待收", "应收", "不计入总数")),
     )
 
 
@@ -142,9 +139,10 @@ def _append_table_row(
             return
         if infer_account_type(institution) == "receivable":
             snapshot.entries.append(_entry(
-                member="家庭公共", name=institution, account_type="receivable",
+                member=member, name=institution, account_type="receivable",
                 amount_raw=cells[3] if len(cells) > 3 else "", line_number=line_number,
                 include="不计入总数" not in institution,
+                type_unresolved=not any(word in institution for word in ("待收", "应收", "不计入总数")),
             ))
             return
         day_match = re.search(r"(\d{1,2})", first)
@@ -158,11 +156,7 @@ def _append_table_row(
         return
     if len(cells) >= 2 and first:
         account_type = infer_account_type(first)
-        target_member = (
-            "家庭公共"
-            if account_type in {"receivable", "other_liability"} or first.lower() in SHARED_INVESTMENTS
-            else member
-        )
+        target_member = member
         snapshot.entries.append(_entry(
             member=target_member, name=first, account_type=account_type,
             amount_raw=cells[-1], line_number=line_number,
@@ -222,6 +216,16 @@ def parse_legacy_markdown(content: str) -> list[ParsedSnapshot]:
                     current.status = "blocked"
                 continue
             if len(cells) >= 2:
+                if cells[0] in {"证券/投资账户", "证券", "投资账户"}:
+                    try:
+                        entry = _entry(member="家庭公共", name=cells[0], account_type="investment",
+                            amount_raw=cells[-1], line_number=line_number)
+                        entry.ownership_unresolved = True
+                        current.entries.append(entry)
+                    except ValueError as exc:
+                        current.blocking_errors.append(f"第 {line_number} 行：{exc}")
+                        current.status = "blocked"
+                    continue
                 summary_key = next((key for text, key in SUMMARY_KEYS.items() if text in cells[0]), None)
                 if summary_key:
                     try:

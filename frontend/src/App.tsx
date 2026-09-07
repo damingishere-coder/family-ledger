@@ -9,6 +9,7 @@ const DataPage = lazy(() => import('./pages/DataPage'))
 const HistoryPage = lazy(() => import('./pages/HistoryPage'))
 const NewSnapshotPage = lazy(() => import('./pages/NewSnapshotPage'))
 const SnapshotDetailPage = lazy(() => import('./pages/SnapshotDetailPage'))
+const ImportReviewPage = lazy(() => import('./pages/ImportReviewPage'))
 
 export default function App() {
   return (
@@ -21,6 +22,7 @@ export default function App() {
           <Route path="snapshots/:snapshotId" element={<SnapshotDetailPage />} />
           <Route path="accounts" element={<AccountsPage />} />
           <Route path="data" element={<DataPage />} />
+          <Route path="data/import" element={<ImportReviewPage />} />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Route>
       </Routes>

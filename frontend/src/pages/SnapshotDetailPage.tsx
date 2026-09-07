@@ -5,20 +5,19 @@ import LoadingState from '../components/LoadingState'
 import { ACCOUNT_TYPE_LABELS } from '../lib/accounts'
 import { api, errorMessage } from '../lib/api'
 import { formatSnapshotMonth } from '../lib/month'
-import { centsToInput, formatMoney, parseAmountToCents } from '../lib/money'
+import { formatMoney } from '../lib/money'
+import { useAmountEditor, useSaveBeforeLeave } from '../lib/useAmountEditor'
 import type { Snapshot } from '../types'
 
 export default function SnapshotDetailPage() {
   const { snapshotId } = useParams()
-  const [snapshot, setSnapshot] = useState<Snapshot | null>(null)
+  const { snapshot, values, error, setError, saving, initialize, changeValue, saveAll, dirty } = useAmountEditor()
+  const leaving = useSaveBeforeLeave(dirty, saveAll)
   const [editing, setEditing] = useState(false)
-  const [values, setValues] = useState<Record<number, string>>({})
   const [message, setMessage] = useState('')
-  const [error, setError] = useState('')
 
   const load = () => api.get<Snapshot>(`/snapshots/${snapshotId}`).then((data) => {
-    setSnapshot(data)
-    setValues(Object.fromEntries((data.entries ?? []).map((entry) => [entry.id, centsToInput(entry.amount_cents)])))
+    initialize(data)
   }).catch((reason) => setError(errorMessage(reason)))
   useEffect(() => {
     void load()
@@ -27,18 +26,8 @@ export default function SnapshotDetailPage() {
   const save = async () => {
     if (!snapshot) return
     setError('')
-    try {
-      for (const entry of snapshot.entries ?? []) {
-        const cents = parseAmountToCents(values[entry.id] ?? '')
-        if (cents !== entry.amount_cents) {
-          await api.put(`/snapshots/${snapshot.id}/entries/${entry.id}`, { amount_cents: cents })
-        }
-      }
-      await load()
-      setEditing(false)
-      setMessage('修改已保存，汇总数据已重新计算。')
-    } catch (reason) {
-      setError(errorMessage(reason))
+    if (await saveAll()) {
+      setEditing(false); setMessage('修改已全部保存，汇总数据已重新计算。')
     }
   }
 
@@ -54,7 +43,7 @@ export default function SnapshotDetailPage() {
     <div className="page detail-page">
       <header className="page-header detail-header compact-page-header">
         <div><Link className="back-link" to="/history"><ArrowLeft size={16} /> 返回历史</Link><h1>{formatSnapshotMonth(snapshot.snapshot_date)} 家庭资产</h1><p>{formatSnapshotMonth(snapshot.snapshot_date)} · {snapshot.entries?.length ?? 0} 个账户 · {snapshot.status === 'completed' ? '已完成' : '草稿'}</p></div>
-        <div className="button-row">{editing ? <><button className="button ghost" onClick={() => { setEditing(false); load() }}>取消</button><button className="button primary" onClick={save}><Save size={17} /> 保存修改</button></> : <button className="button secondary" onClick={() => setEditing(true)}><Edit3 size={17} /> 编辑金额</button>}</div>
+        <div className="button-row">{editing ? <><button className="button ghost" disabled={saving || leaving} onClick={() => { initialize(snapshot); setEditing(false) }}>取消</button><button className="button primary" disabled={saving || leaving} onClick={() => void save()}><Save size={17} /> 保存修改</button></> : <button className="button secondary" onClick={() => setEditing(true)}><Edit3 size={17} /> 编辑金额</button>}</div>
       </header>
       {message && <div className="notice success"><Check size={17} /> {message}</div>}
       {error && <div className="notice error">{error}</div>}
@@ -62,10 +51,10 @@ export default function SnapshotDetailPage() {
       {Object.entries(groups).map(([memberName, entries]) => (
         <section className="panel table-panel detail-member-panel" key={memberName}>
           <div className="panel-header"><div><h2>{memberName}</h2><p>与上一期逐项比较</p></div></div>
-          <div className="table-scroll"><table><thead><tr><th>账户</th><th>类型</th><th>上期</th><th>本期</th><th>变化</th></tr></thead><tbody>{entries?.map((entry) => <tr key={entry.id}><td><strong>{entry.account_name}</strong>{entry.institution && entry.institution !== entry.account_name ? <small>{entry.institution}</small> : null}</td><td><span className="type-tag">{ACCOUNT_TYPE_LABELS[entry.account_type]}</span></td><td>{formatMoney(entry.previous_amount_cents)}</td><td>{editing ? <input className="money-input compact" value={values[entry.id] ?? ''} onChange={(event) => setValues((current) => ({ ...current, [entry.id]: event.target.value }))} /> : formatMoney(entry.amount_cents)}</td><td className={entry.change_cents !== null && entry.change_cents < 0 ? 'negative' : 'positive'}>{formatMoney(entry.change_cents, true)}</td></tr>)}</tbody></table></div>
+          <div className="table-scroll"><table><thead><tr><th>账户</th><th>类型</th><th>上期</th><th>本期</th><th>变化</th><th>计入净资产</th></tr></thead><tbody>{entries?.map((entry) => <tr key={entry.id}><td><strong>{entry.account_name}</strong>{entry.institution && entry.institution !== entry.account_name ? <small>{entry.institution}</small> : null}{entry.legacy_raw_name && <details><summary className="text-link">原始记录</summary><small>{entry.source_file}{entry.source_location ? ` · ${entry.source_location}` : ''}</small><small>{entry.legacy_raw_name}：{entry.legacy_raw_value === '' ? '未填写' : entry.legacy_raw_value}</small></details>}</td><td><span className="type-tag">{ACCOUNT_TYPE_LABELS[entry.account_type]}</span></td><td>{formatMoney(entry.previous_amount_cents)}</td><td>{editing ? <input className="money-input compact" value={values[entry.id] ?? ''} aria-label={`${entry.account_name} 本期金额`} disabled={saving || leaving} onChange={(event) => changeValue(entry.id, event.target.value, false)} /> : formatMoney(entry.amount_cents)}</td><td className={entry.change_cents !== null && (['credit_card', 'other_liability'].includes(entry.account_type) ? entry.change_cents > 0 : entry.change_cents < 0) ? 'negative' : 'positive'}>{formatMoney(entry.change_cents, true)}</td><td>{entry.include_in_net_worth ? '计入' : '不计入'}{entry.amount_cents === null && <small>未填写金额</small>}</td></tr>)}</tbody></table></div>
         </section>
       ))}
-      {snapshot.legacy_source && <section className="notice warning">此记录导入自 {snapshot.legacy_source}。原始值已保留，导入差异请在“数据管理”查看。</section>}
+      {snapshot.legacy_source && <section className="notice warning">此记录导入自 {snapshot.legacy_source}。原始值已保留。<Link className="text-link" to="/data/import">核对来源与修正归属</Link></section>}
     </div>
   )
 }

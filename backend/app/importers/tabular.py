@@ -221,6 +221,9 @@ def _legacy_entry(
         institution=institution, source_sheet=snapshot.source_sheet,
         source_location=location, raw_name=name,
         raw_value="" if amount is None else str(amount), warnings=warnings,
+        ownership_unresolved=member == "家庭公共",
+        type_unresolved=any(word in name for word in ("借款", "待还款")) and not any(
+            word in name for word in ("待收", "应收", "不计入总数")),
     ))
 
 
@@ -311,7 +314,7 @@ def _parse_legacy_sheet(
                 continue
             if infer_account_type(institution) == "receivable":
                 _legacy_entry(
-                    snapshot=snapshot, member="家庭公共", name=institution,
+                    snapshot=snapshot, member=member, name=institution,
                     account_type="receivable", amount=amount, include=False,
                     location=f"{title}!{cached_sheet.cell(bill_row + 1, column + 1).coordinate}",
                 )

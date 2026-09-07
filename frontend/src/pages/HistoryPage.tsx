@@ -6,7 +6,7 @@ import EmptyState from '../components/EmptyState'
 import LoadingState from '../components/LoadingState'
 import { api, errorMessage } from '../lib/api'
 import { formatSnapshotMonth, formatSnapshotMonthShort } from '../lib/month'
-import { formatMoney } from '../lib/money'
+import { formatMoney, formatChartMoney } from '../lib/money'
 import { compareSnapshots } from '../lib/snapshots'
 import type { Snapshot } from '../types'
 
@@ -17,7 +17,7 @@ export default function HistoryPage() {
   const [snapshots, setSnapshots] = useState<Snapshot[] | null>(null)
   const [year, setYear] = useState('all')
   const [metric, setMetric] = useState<Metric>('net_worth_cents')
-  const [view, setView] = useState<HistoryView>('chart')
+  const [view, setView] = useState<HistoryView>('table')
   const [error, setError] = useState('')
 
   const load = () => api.get<Snapshot[]>('/snapshots?status=completed').then(setSnapshots).catch((reason) => setError(errorMessage(reason)))
@@ -70,7 +70,7 @@ export default function HistoryPage() {
                   <div><h2>家庭资产趋势</h2><p>{year === 'all' ? '全部年份' : `${year} 年`}</p></div>
                   <div className="segmented">{([['net_worth_cents', '净资产'], ['total_assets_cents', '总资产'], ['total_liabilities_cents', '总负债']] as const).map(([key, label]) => <button type="button" key={key} className={metric === key ? 'active' : ''} onClick={() => setMetric(key)}>{label}</button>)}</div>
                 </div>
-                <div className="chart-wrap"><ResponsiveContainer width="100%" height="100%"><LineChart data={chartData} margin={{ top: 10, right: 16, left: 4, bottom: 2 }}><CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e8eef7" /><XAxis dataKey="snapshot_date" tickFormatter={(value) => formatSnapshotMonthShort(String(value))} tickLine={false} axisLine={false} /><YAxis tickFormatter={(value) => `${Math.round(Number(value) / 10_000)}万`} tickLine={false} axisLine={false} width={52} /><Tooltip formatter={(value) => formatMoney(Number(value))} labelFormatter={(value) => formatSnapshotMonth(String(value))} /><Line dataKey={metric} type="monotone" stroke="#0a63f6" strokeWidth={2.5} dot={{ r: 3, fill: '#0a63f6', strokeWidth: 0 }} activeDot={{ r: 5 }} /></LineChart></ResponsiveContainer></div>
+                <div className="chart-wrap"><ResponsiveContainer width="100%" height="100%"><LineChart data={chartData} margin={{ top: 10, right: 16, left: 4, bottom: 2 }}><CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e8eef7" /><XAxis dataKey="snapshot_date" tickFormatter={(value) => formatSnapshotMonthShort(String(value))} tickLine={false} axisLine={false} /><YAxis tickFormatter={(value) => formatChartMoney(Number(value))} tickLine={false} axisLine={false} width={52} /><Tooltip formatter={(value) => formatMoney(Number(value))} labelFormatter={(value) => formatSnapshotMonth(String(value))} /><Line dataKey={metric} type="monotone" stroke="#0a63f6" strokeWidth={2.5} dot={{ r: 3, fill: '#0a63f6', strokeWidth: 0 }} activeDot={{ r: 5 }} /></LineChart></ResponsiveContainer></div>
               </article>
               <article className="panel comparison-panel">
                 <div className="panel-header"><div><h2>与上期比较</h2><p>{filtered[0] && filtered[1] ? `${formatSnapshotMonthShort(filtered[1].snapshot_date)} → ${formatSnapshotMonthShort(filtered[0].snapshot_date)}` : '暂无上期数据'}</p></div></div>

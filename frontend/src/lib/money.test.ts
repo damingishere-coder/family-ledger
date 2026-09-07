@@ -1,6 +1,12 @@
 import { describe, expect, it } from 'vitest'
-import { calculateEntries, centsToInput, parseAmountToCents } from './money'
+import { calculateEntries, centsToInput, parseAmountToCents, formatChartMoney } from './money'
 import type { SnapshotEntry } from '../types'
+
+it('formats chart ticks from cents to ten-thousand yuan without a 100x error', () => {
+  expect(formatChartMoney(1_000_000)).toBe('1万')
+  expect(formatChartMoney(-5_250_000)).toBe('-5.25万')
+  expect(formatChartMoney(0)).toBe('0万')
+})
 
 function entry(overrides: Partial<SnapshotEntry>): SnapshotEntry {
   return {
